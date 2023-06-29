@@ -31,17 +31,33 @@ import unsafeExceptions.canThrowAny
 object Tests extends Suite(t"Villainy tests"):
   def run(): Unit =
     val record = test(t"Construct a new record"):
-      ExampleSchema.record(Json.parse(t"""{"name": "Jon", "age": 38, "children": [{"height": 3.3, "weight": 2.9 }, {"height": 1.0, "weight": 30.0}] }""").root)
+      ExampleSchema.record(Json.parse(t"""{"name": "Jim", "sub": { "date": "11/12/20" }, "age": 38, "children": [{"height": 3.3, "weight": 0.8, "color": "green" }, {"height": 1.0, "weight": 30.0, "color": "red"}] }""").root)
     .check()
 
     test(t"Get a text value"):
       record.name
-    .assert(_ == "Jon")
+    .assert(_ == t"Jim")
 
     test(t"Get an integer value"):
       record.age
     .assert(_ == 38)
 
+    test(t"Get an array value"):
+      record.children
+    .assert()
+    
+    test(t"Get the head of an array"):
+      record.children.head
+    .assert()
+    
     test(t"Get a nested value"):
       record.children.head.weight
-    .assert(_ == 2.9)
+    .assert(_ == 0.8)
+    
+    test(t"Get a nested item value"):
+      record.children.head.color
+    .assert(_ == t"green")
+    
+    test(t"Get a nested item value"):
+      record.sub.date
+    .assert(_ == t"11/12/20")
