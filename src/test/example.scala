@@ -27,7 +27,7 @@ object ExampleSchema extends JsonSchema(unsafely(Json.parse(t"""{
       "description": "Children",
       "type": "array",
       "items": {
-        "height": { "type": "number", "description": "Height" },
+        "height": { "type": "integer", "description": "Height" },
         "weight": { "type": "number", "description": "Weight" },
         "color": { "type": "string", "description": "Colour" }
       }

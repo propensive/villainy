@@ -31,7 +31,7 @@ import unsafeExceptions.canThrowAny
 object Tests extends Suite(t"Villainy tests"):
   def run(): Unit =
     val record = test(t"Construct a new record"):
-      ExampleSchema.record(Json.parse(t"""{"name": "Jim", "sub": { "date": "11/12/20" }, "age": 38, "children": [{"height": 3.3, "weight": 0.8, "color": "green" }, {"height": 1.0, "weight": 30.0, "color": "red"}] }""").root)
+      ExampleSchema.record(Json.parse(t"""{"name": "Jim", "sub": { "date": "11/12/20" }, "age": 38, "children": [{"height": 7, "weight": 0.8, "color": "green" }, {"height": 9, "weight": 30.0, "color": "red"}] }""").root)
     .check()
 
     test(t"Get a text value"):
@@ -61,3 +61,7 @@ object Tests extends Suite(t"Villainy tests"):
     test(t"Get a nested item value"):
       record.sub.date
     .assert(_ == t"11/12/20")
+
+    test(t"Get some values in a list"):
+      record.children.map(_.height).to(List)
+    .assert(_ == List(7, 9))

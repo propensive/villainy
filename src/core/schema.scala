@@ -31,7 +31,12 @@ object JsonRecord:
   given ValueAccessor[JsonRecord, JsonAst, "boolean", Boolean] = _.asInstanceOf[Boolean]
   given ValueAccessor[JsonRecord, JsonAst, "string", Text] = _.asInstanceOf[Text]
   given ValueAccessor[JsonRecord, JsonAst, "integer", Int] = _.asInstanceOf[Long].toInt
-  given ValueAccessor[JsonRecord, JsonAst, "number", Double] = _.asInstanceOf[Double]
+  
+  given ValueAccessor[JsonRecord, JsonAst, "number", Double] =
+    case long: Long          => long.toDouble
+    case decimal: BigDecimal => decimal.toDouble
+    case double: Double      => double
+
   given RecordAccessor[JsonRecord, JsonAst, "array", IArray] = _.asInstanceOf[IArray[JsonAst]].map(_)
   given RecordAccessor[JsonRecord, JsonAst, "object", [T] =>> T] = (value, make) => make(value)
   
