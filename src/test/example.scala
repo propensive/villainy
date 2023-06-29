@@ -53,3 +53,4 @@ object ExampleSchema extends JsonSchema(unsafely(Json.parse(t"""{
   import RecordField.*
   
   transparent inline def record(json: JsonAst): JsonRecord = ${build('json)}
+

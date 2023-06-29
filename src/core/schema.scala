@@ -28,16 +28,17 @@ import scala.compiletime.*
 import unsafeExceptions.canThrowAny
 
 object JsonRecord:
-  given ValueAccessor[JsonRecord, JsonAst, "boolean", Boolean] = _.asInstanceOf[Boolean]
-  given ValueAccessor[JsonRecord, JsonAst, "string", Text] = _.asInstanceOf[Text]
-  given ValueAccessor[JsonRecord, JsonAst, "integer", Int] = _.asInstanceOf[Long].toInt
+  given ValueAccessor[JsonRecord, JsonAst, "boolean", Boolean] = _.boolean
+  given ValueAccessor[JsonRecord, JsonAst, "string", Text] = _.string
+  given ValueAccessor[JsonRecord, JsonAst, "integer", Int] = _.long.toInt
   
-  given ValueAccessor[JsonRecord, JsonAst, "number", Double] =
+  given ValueAccessor[JsonRecord, JsonAst, "number", Double] = _.asMatchable match
     case long: Long          => long.toDouble
     case decimal: BigDecimal => decimal.toDouble
     case double: Double      => double
+    case _                   => throw JsonSchemaError()
 
-  given RecordAccessor[JsonRecord, JsonAst, "array", IArray] = _.asInstanceOf[IArray[JsonAst]].map(_)
+  given RecordAccessor[JsonRecord, JsonAst, "array", IArray] = _.array.map(_)
   given RecordAccessor[JsonRecord, JsonAst, "object", [T] =>> T] = (value, make) => make(value)
   
 class JsonRecord(data: JsonAst, access: String => JsonAst => Any)
@@ -61,9 +62,8 @@ object JsonSchema:
       case other    => RecordField.Value(other)
 
 abstract class JsonSchema(val doc: JsonSchemaDoc) extends Schema[JsonAst, JsonRecord]:
-  def access(name: String, json: JsonAst): JsonAst =
-    json.asInstanceOf[JsonAst].obj match
-      case (keys: IArray[String], values: IArray[JsonAst]) => values(keys.indexOf(name))
+  def access(name: String, json: JsonAst): JsonAst = json.obj match
+    case (keys: IArray[String], values: IArray[JsonAst]) => values(keys.indexOf(name))
 
   def make(data: JsonAst, access: String => JsonAst => Any): JsonRecord = JsonRecord(data, access)
   def fields: Map[String, RecordField] = unsafely(doc.fields)
