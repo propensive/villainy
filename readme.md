@@ -66,7 +66,38 @@ type Person = Any:
 which does not require a corresponding class file to exist for the compiler to use it. (In fact, an instance
 of the case class `Person` would conform to the structural type `Person` anyway.)
 
-Given a `JsonSchema` object instance corresponding to our particular schema, say, `PersonSchema`, _Villainy_
+### Creating a schema object
+
+We need to create an object, say, `PersonSchema`, which represents our schema. This _must_ be a singleton
+object (and not a `val`), and should extend `JsonSchema`, which requires a single constructor parameter.
+
+This constructor parameter may be any value that can be read as `Bytes`, so the following options would
+all work, using appropriate [Turbulence](https://github.com/propensive/turbulence) `Readable` instances:
+```scala
+val schema: Text = t"""{...}"""
+object PersonSchema extends JsonSchema(schema)
+```
+or, using [Ambience](https://github.com/propensive/ambience/) and [Galilei](https://github.com/propensive/galilei),
+```scala
+object PersonSchema extends JsonSchema(env.pwd / p"data" / p"schema.json")
+```
+or, using [Telekinesis](https://github.com/propensive/telekinesis/),
+```scala
+object PersonSchema extends JsonSchema(url"https://example.com/schemata/person.jsons")
+```
+
+This object must be compiled before any code which uses it to create records. It should be sufficient to put it into
+a separate source file, but it can also be compiled in a separate build module.
+
+This is because the compiler needs to instantiate it at the time it compiles the code which constructs
+records. It will therefore also need to execute the code which provides the JSON schema data, so in the file-based
+example above, the file `schema.json` must be in the right place relative to the PWD *at compiletime*.
+
+Furthermore, any exceptions that may be thrown during construction must be neutralized.
+
+### Constructing the record
+
+Given a `JsonSchema` object instance corresponding to our particular schema, _Villainy_
 makes it possible to construct a new record instance from an untyped `Json` value with a structural type
 derived from the JSON schema above, *without* needing to define the type for that schema:
 ```scala
