@@ -75,7 +75,7 @@ Villainy was designed and developed by Jon Pretty, and commercial support and tr
 
 ## Name
 
-
+Schema is homophonous with _schemer_, that is, someone who formulates devious plans; presumably an act of _villainy_.
 
 In general, Scala One project names are always chosen with some rationale, however it is usually
 frivolous. Each name is chosen for more for its _uniqueness_ and _intrigue_ than its concision or
