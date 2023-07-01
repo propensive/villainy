@@ -4,7 +4,7 @@
 
 # Villainy
 
-____
+__Scheming typesafe Scala record types for JSON__
 
 _Villainy_ makes it possible to construct safe record types from a JSON Schema,
 without any explicit Scala definitions of those types. This makes it safer and
@@ -31,7 +31,7 @@ TBC
 
 ## Status
 
-Villainy is classified as ____. For reference, Scala One projects are
+Villainy is classified as __embryonic__. For reference, Scala One projects are
 categorized into one of the following five stability levels:
 
 - _embryonic_: for experimental or demonstrative purposes only, without any guarantees of longevity
