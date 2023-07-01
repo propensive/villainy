@@ -29,11 +29,10 @@ case class Name(first: String, last: String)
 ```
 but for many cases, it may be sufficient to use this structural type,
 ```scala
-type Person = Any:
-  def name: Any:
-    def first: String
-    def last: String
+type Person = {
+  def name: { def first: String; def last: String }
   def age: Int
+}
 ```
 which does not require a corresponding class file to exist for the compiler to use it. (In fact, an instance
 of the case class `Person` would conform to the structural type `Person` anyway.)
