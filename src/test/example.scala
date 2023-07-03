@@ -30,6 +30,7 @@ object ExampleSchema extends JsonSchema(unsafely(Json.parse(t"""{
   "title": "Title",
   "description": "desc",
   "type": "object",
+  "required": ["name", "sub", "children"],
   "properties": {
     "name": { "type": "string" },
     "age": { "type": "integer" },

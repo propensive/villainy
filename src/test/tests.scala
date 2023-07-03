@@ -31,7 +31,7 @@ import unsafeExceptions.canThrowAny
 object Tests extends Suite(t"Villainy tests"):
   def run(): Unit =
     val record = test(t"Construct a new record"):
-      ExampleSchema.record(Json.parse(t"""{"name": "Jim", "sub": { "date": "11/12/20" }, "age": 38, "children": [{"height": 7, "weight": 0.8, "color": "green" }, {"height": 9, "weight": 30.0, "color": "red"}] }""").root)
+      ExampleSchema.record(Json.parse(t"""{"name": "Jim", "sub": { "date": "11/12/20" }, "children": [{"height": 7, "weight": 0.8, "color": "green" }, {"height": 9, "weight": 30.0, "color": "red"}] }""").root)
     .check()
 
     test(t"Get a text value"):
@@ -40,7 +40,7 @@ object Tests extends Suite(t"Villainy tests"):
 
     test(t"Get an integer value"):
       record.age
-    .assert(_ == 38)
+    .assert(_ == Unset)
 
     test(t"Get an array value"):
       record.children
