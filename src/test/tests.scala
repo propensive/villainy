@@ -26,13 +26,22 @@ import hieroglyph.*, charEncoders.utf8
 import spectacular.*
 import digression.*
 
-import unsafeExceptions.canThrowAny
+//import unsafeExceptions.canThrowAny
 
 object Tests extends Suite(t"Villainy tests"):
   def run(): Unit =
     val record = test(t"Construct a new record"):
-      ExampleSchema.record(Json.parse(t"""{"name": "Jim", "sub": { "date": "11/12/20" }, "children": [{"height": 7, "weight": 0.8, "color": "green" }, {"height": 9, "weight": 30.0, "color": "red"}] }""").root)
+      ExampleSchema.record(unsafely(Json.parse(
+        t"""{
+          "name": "Jim",
+          "sub": { "date": "11/12/20" },
+          "children": [{"height": 100, "weight": 0.8, "color": "green" },
+          {"height": 9, "weight": 30.0, "color": "red"}]
+        }"""
+      ).root))
     .check()
+
+    erased given CanThrow[JsonSchemaError] = ###
 
     test(t"Get a text value"):
       record.name
@@ -63,5 +72,7 @@ object Tests extends Suite(t"Villainy tests"):
     .assert(_ == t"11/12/20")
 
     test(t"Get some values in a list"):
-      record.children.map(_.height).to(List)
-    .assert(_ == List(7, 9))
+      unsafely:
+        capture:
+          record.children.map { elem => elem.height }.to(List)
+    .assert(_ == IntRangeError(100, 1, 99))
