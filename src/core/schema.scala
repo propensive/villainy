@@ -59,7 +59,9 @@ object JsonValidationError:
       case PatternMismatch(value, pattern) =>
         msg"the value did not conform to the regular expression ${pattern.pattern}"
 
-case class JsonValidationError(issue: JsonValidationError.Issue)
+import JsonValidationError.Issue, Issue.*
+
+case class JsonValidationError(issue: Issue)
 extends Error(msg"the JSON was not valid according to the schema")
 
 trait JsonValueAccessor[NameType <: Label, ValueType]
@@ -67,7 +69,7 @@ extends ValueAccessor[JsonRecord, Maybe[Json], NameType, ValueType]:
   def access(value: Json): ValueType
     
   def transform(value: Maybe[Json], params: List[String]): ValueType =
-    value.mm(access(_)).or(throw JsonValidationError(JsonValidationError.Issue.MissingValue))
+    value.mm(access(_)).or(throw JsonValidationError(MissingValue))
 
 object JsonRecord:
 
@@ -130,28 +132,26 @@ object JsonRecord:
     (value, params) => value.mm(_.as[Text])
 
   given pattern
-      : ValueAccessor[JsonRecord, Maybe[Json], "pattern", Text throws JsonValidationError] with
-    def transform(value: Maybe[Json], params: List[String]): Text throws JsonValidationError =
+      : ValueAccessor[JsonRecord, Maybe[Json], "pattern", Text] with
+    def transform(value: Maybe[Json], params: List[String]): Text =
       value.mm: value =>
         (params: @unchecked) match
           case List(pattern: String) =>
             val regex = Regex(Text(pattern))
             if regex.matches(value.as[Text]) then value.as[Text]
-            else throw JsonValidationError(JsonValidationError.Issue.PatternMismatch(value.as[Text],
-                regex))
-      .or(throw JsonValidationError(JsonValidationError.Issue.MissingValue))
+            else throw JsonValidationError(PatternMismatch(value.as[Text], regex))
+      .or(throw JsonValidationError(MissingValue))
 
-  given maybePattern: ValueAccessor[JsonRecord, Maybe[Json], "pattern?", Maybe[Text] throws
-      JsonValidationError] with
+  given maybePattern: ValueAccessor[JsonRecord, Maybe[Json], "pattern?", Maybe[Text]] with
     def transform
         (value: Maybe[Json], params: List[String] = Nil)
-        : Maybe[Text] throws JsonValidationError =
+        : Maybe[Text] =
       value.mm: value =>
         (params: @unchecked) match
           case pattern :: Nil =>
             val regex = Regex(Text(pattern))
             if regex.matches(value.as[Text]) then value.as[Text]
-            else throw JsonValidationError(JsonValidationError.Issue.PatternMismatch(value.as[Text], regex))
+            else throw JsonValidationError(PatternMismatch(value.as[Text], regex))
   
   given maybeInteger: ValueAccessor[JsonRecord, Maybe[Json], "integer?", Maybe[Int]] =
     (value, params) => value.mm(_.as[Int])

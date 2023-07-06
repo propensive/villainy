@@ -36,8 +36,10 @@ object Tests extends Suite(t"Villainy tests"):
         t"""{
           "name": "Jim",
           "sub": { "date": "11/12/20" },
-          "children": [{"height": 100, "weight": 0.8, "color": "green" },
-          {"height": 9, "weight": 30.0, "color": "red"}],
+          "children": [
+            {"height": 100, "weight": 0.8, "color": "green" },
+            {"height": 9, "weight": 30.0, "color": "#ff0000"}
+          ],
           "pattern": "a.b",
           "domain": "example.com"
         }"""
@@ -66,9 +68,13 @@ object Tests extends Suite(t"Villainy tests"):
       record.children.head.weight
     .assert(_ == 0.8)
     
-    test(t"Get a nested item value"):
-      record.children.head.color
-    .assert(_ == t"green")
+    test(t"A bad pattern-checked value throws an exceptions"):
+      unsafely(capture[JsonValidationError, Maybe[Text]](record.children.head.color))
+    .assert(_ == JsonValidationError(JsonValidationError.Issue.PatternMismatch(t"green", r"#[0-9a-f]{6}")))
+    
+    test(t"A bad pattern-checked value throws an exceptions"):
+      unsafely(record.children(1).color)
+    .assert(_ == t"#ff0000")
     
     test(t"Get a nested item value"):
       record.sub.date
@@ -78,7 +84,7 @@ object Tests extends Suite(t"Villainy tests"):
       unsafely:
         record.pattern
     .assert(_ == unsafely(Regex(t"a.b")))
-
+    
     test(t"Get some values in a list"):
       unsafely:
         capture:
