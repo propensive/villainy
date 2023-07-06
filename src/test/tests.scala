@@ -25,6 +25,7 @@ import turbulence.*
 import hieroglyph.*, charEncoders.utf8
 import spectacular.*
 import digression.*
+import kaleidoscope.*
 
 //import unsafeExceptions.canThrowAny
 
@@ -36,12 +37,14 @@ object Tests extends Suite(t"Villainy tests"):
           "name": "Jim",
           "sub": { "date": "11/12/20" },
           "children": [{"height": 100, "weight": 0.8, "color": "green" },
-          {"height": 9, "weight": 30.0, "color": "red"}]
+          {"height": 9, "weight": 30.0, "color": "red"}],
+          "pattern": "a.b",
+          "domain": "example.com"
         }"""
       ).root))
     .check()
 
-    erased given CanThrow[JsonSchemaError] = ###
+    //erased given CanThrow[JsonSchemaError] = ###
 
     test(t"Get a text value"):
       record.name
@@ -70,6 +73,11 @@ object Tests extends Suite(t"Villainy tests"):
     test(t"Get a nested item value"):
       record.sub.date
     .assert(_ == t"11/12/20")
+    
+    test(t"Get a regex value"):
+      unsafely:
+        record.pattern
+    .assert(_ == unsafely(Regex(t"a.b")))
 
     test(t"Get some values in a list"):
       unsafely:

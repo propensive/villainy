@@ -6,12 +6,13 @@ target villainy/test
 repo propensive/probably
 repo propensive/jacinta
 repo propensive/polyvinyl
+repo propensive/nettlesome
 
 project villainy
   module core
     compiler  scala
     sources   src/core
-    include   rudiments/core polyvinyl/core jacinta/core
+    include   rudiments/core polyvinyl/core jacinta/core nettlesome/core
 
   module test
     compiler  scala
