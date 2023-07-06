@@ -69,7 +69,7 @@ object Tests extends Suite(t"Villainy tests"):
     .assert(_ == 0.8)
     
     test(t"A bad pattern-checked value throws an exceptions"):
-      unsafely(capture[JsonValidationError, Maybe[Text]](record.children.head.color))
+      unsafely(capture[JsonValidationError](record.children.head.color))
     .assert(_ == JsonValidationError(JsonValidationError.Issue.PatternMismatch(t"green", r"#[0-9a-f]{6}")))
     
     test(t"A bad pattern-checked value throws an exceptions"):
