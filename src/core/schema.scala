@@ -63,103 +63,104 @@ case class JsonValidationError(issue: JsonValidationError.Issue)
 extends Error(msg"the JSON was not valid according to the schema")
 
 trait JsonValueAccessor[NameType <: Label, ValueType]
-extends ValueAccessor[JsonRecord, Maybe[JsonAst], NameType, ValueType]:
-  def access(value: JsonAst): ValueType
+extends ValueAccessor[JsonRecord, Maybe[Json], NameType, ValueType]:
+  def access(value: Json): ValueType
     
-  def transform(value: Maybe[JsonAst], params: List[String]): ValueType =
+  def transform(value: Maybe[Json], params: List[String]): ValueType =
     value.mm(access(_)).or(throw JsonValidationError(JsonValidationError.Issue.MissingValue))
 
 object JsonRecord:
 
-  given boolean: JsonValueAccessor["boolean", Boolean] = _.boolean
-  given string: JsonValueAccessor["string", Text] = _.string
-  given integer: JsonValueAccessor["integer", Int] = _.long.toInt
-  given number: JsonValueAccessor["number", Double] = _.double
-  given dateTime: JsonValueAccessor["date-time", Text] = _.string // Use Anticipation/Aviation
-  given date: JsonValueAccessor["date", Text] = _.string          // Use Anticipation/Aviation
-  given time: JsonValueAccessor["time", Text] = _.string          // Use Anticipation/Aviation
-  given duration: JsonValueAccessor["duration", Text] = _.string  // Use Anticipation/Aviation
-  given email: JsonValueAccessor["email", Text] = _.string
-  given idnEmail: JsonValueAccessor["idn-email", Text] = _.string
-  given hostname: JsonValueAccessor["hostname", Text] = _.string
-  given idnHostname: JsonValueAccessor["idn-hustname", Text] = _.string
+  given boolean: JsonValueAccessor["boolean", Boolean] = _.as[Boolean]
+  given string: JsonValueAccessor["string", Text] = _.as[Text]
+  given integer: JsonValueAccessor["integer", Int] = _.as[Int]
+  given number: JsonValueAccessor["number", Double] = _.as[Double]
+  given dateTime: JsonValueAccessor["date-time", Text] = _.as[Text] // Use Anticipation/Aviation
+  given date: JsonValueAccessor["date", Text] = _.as[Text]          // Use Anticipation/Aviation
+  given time: JsonValueAccessor["time", Text] = _.as[Text]          // Use Anticipation/Aviation
+  given duration: JsonValueAccessor["duration", Text] = _.as[Text]  // Use Anticipation/Aviation
+  given email: JsonValueAccessor["email", Text] = _.as[Text]
+  given idnEmail: JsonValueAccessor["idn-email", Text] = _.as[Text]
+  given hostname: JsonValueAccessor["hostname", Text] = _.as[Text]
+  given idnHostname: JsonValueAccessor["idn-hustname", Text] = _.as[Text]
   given ipv4: JsonValueAccessor["ipv4", Ipv4 throws IpAddressError] with
-    def access(value: JsonAst): Ipv4 throws IpAddressError = Ipv4.parse(value.string)
+    def access(value: Json): Ipv4 throws IpAddressError = Ipv4.parse(value.as[Text])
   
   given ipv6: JsonValueAccessor["ipv6", Ipv6 throws IpAddressError] with
-    def access(value: JsonAst): Ipv6 throws IpAddressError = Ipv6.parse(value.string)
+    def access(value: Json): Ipv6 throws IpAddressError = Ipv6.parse(value.as[Text])
   
   given uri[UrlType: GenericUrl]: JsonValueAccessor["uri", UrlType] =
-    value => makeUrl[UrlType](value.string.s)
+    value => makeUrl[UrlType](value.as[String])
   
-  given uriReference: JsonValueAccessor["uri-reference", Text] = _.string
+  given uriReference: JsonValueAccessor["uri-reference", Text] = _.as[Text]
   
   given iri[UrlType: GenericUrl]: JsonValueAccessor["iri", UrlType] =
-    value => makeUrl[UrlType](value.string.s)
+    value => makeUrl[UrlType](value.as[String])
 
-  given iriReference: JsonValueAccessor["iri-reference", Text] = _.string
-  given uuid: JsonValueAccessor["uuid", Text] = _.string
-  given uriTemplate: JsonValueAccessor["uri-template", Text] = _.string
-  given jsonPointer: JsonValueAccessor["json-pointer", Text] = _.string
-  given relativeJsonPointer: JsonValueAccessor["relative-json-pointer", Text] = _.string
+  given iriReference: JsonValueAccessor["iri-reference", Text] = _.as[Text]
+  given uuid: JsonValueAccessor["uuid", Text] = _.as[Text]
+  given uriTemplate: JsonValueAccessor["uri-template", Text] = _.as[Text]
+  given jsonPointer: JsonValueAccessor["json-pointer", Text] = _.as[Text]
+  given relativeJsonPointer: JsonValueAccessor["relative-json-pointer", Text] = _.as[Text]
   
   // given maybeRegex
-  //     : ValueAccessor[JsonRecord, Maybe[JsonAst], "regex?", Maybe[Regex] throws InvalidRegexError]
+  //     : ValueAccessor[JsonRecord, Maybe[Json], "regex?", Maybe[Regex] throws InvalidRegexError]
   //     with
     
   //   def transform
-  //       (value: Maybe[JsonAst], params: List[String])
+  //       (value: Maybe[Json], params: List[String])
   //       : Maybe[Regex] throws InvalidRegexError =
   //     (erased invalidRegex: CanThrow[InvalidRegexError]) ?=>
-  //       value.mm(_.string).mm: pattern =>
+  //       value.mm(_.as[Text]).mm: pattern =>
   //         Regex(pattern)
 
   given regex: JsonValueAccessor["regex", Regex throws InvalidRegexError] with
-    def access(value: JsonAst): Regex throws InvalidRegexError = Regex(value.string)
+    def access(value: Json): Regex throws InvalidRegexError = Regex(value.as[Text])
 
-  given array: RecordAccessor[JsonRecord, Maybe[JsonAst], "array", IArray] = _.avow(using Unsafe).array.map(_)
+  given array: RecordAccessor[JsonRecord, Maybe[Json], "array", List] =
+    _.avow(using Unsafe).as[List[Json]].map(_)
   
-  given obj: RecordAccessor[JsonRecord, Maybe[JsonAst], "object", [T] =>> T] = (value, make) =>
+  given obj: RecordAccessor[JsonRecord, Maybe[Json], "object", [T] =>> T] = (value, make) =>
     make(value.avow(using Unsafe))
   
-  given maybeBoolean: ValueAccessor[JsonRecord, Maybe[JsonAst], "boolean?", Maybe[Boolean]] =
-    (value, params) => value.mm(_.boolean)
+  given maybeBoolean: ValueAccessor[JsonRecord, Maybe[Json], "boolean?", Maybe[Boolean]] =
+    (value, params) => value.mm(_.as[Boolean])
   
-  given maybeString: ValueAccessor[JsonRecord, Maybe[JsonAst], "string?", Maybe[Text]] =
-    (value, params) => value.mm(_.string)
+  given maybeString: ValueAccessor[JsonRecord, Maybe[Json], "string?", Maybe[Text]] =
+    (value, params) => value.mm(_.as[Text])
 
   given pattern
-      : ValueAccessor[JsonRecord, Maybe[JsonAst], "pattern", Text throws JsonValidationError] with
-    def transform(value: Maybe[JsonAst], params: List[String]): Text throws JsonValidationError =
+      : ValueAccessor[JsonRecord, Maybe[Json], "pattern", Text throws JsonValidationError] with
+    def transform(value: Maybe[Json], params: List[String]): Text throws JsonValidationError =
       value.mm: value =>
         (params: @unchecked) match
           case List(pattern: String) =>
             val regex = Regex(Text(pattern))
-            if regex.matches(value.string) then value.string
-            else throw JsonValidationError(JsonValidationError.Issue.PatternMismatch(value.string,
+            if regex.matches(value.as[Text]) then value.as[Text]
+            else throw JsonValidationError(JsonValidationError.Issue.PatternMismatch(value.as[Text],
                 regex))
       .or(throw JsonValidationError(JsonValidationError.Issue.MissingValue))
 
-  given maybePattern: ValueAccessor[JsonRecord, Maybe[JsonAst], "pattern?", Maybe[Text] throws
+  given maybePattern: ValueAccessor[JsonRecord, Maybe[Json], "pattern?", Maybe[Text] throws
       JsonValidationError] with
     def transform
-        (value: Maybe[JsonAst], params: List[String] = Nil)
+        (value: Maybe[Json], params: List[String] = Nil)
         : Maybe[Text] throws JsonValidationError =
       value.mm: value =>
         (params: @unchecked) match
           case pattern :: Nil =>
             val regex = Regex(Text(pattern))
-            if regex.matches(value.string) then value.string
-            else throw JsonValidationError(JsonValidationError.Issue.PatternMismatch(value.string, regex))
+            if regex.matches(value.as[Text]) then value.as[Text]
+            else throw JsonValidationError(JsonValidationError.Issue.PatternMismatch(value.as[Text], regex))
   
-  given maybeInteger: ValueAccessor[JsonRecord, Maybe[JsonAst], "integer?", Maybe[Int]] =
-    (value, params) => value.mm(_.long.toInt)
+  given maybeInteger: ValueAccessor[JsonRecord, Maybe[Json], "integer?", Maybe[Int]] =
+    (value, params) => value.mm(_.as[Int])
 
   given boundedInteger
-      : ValueAccessor[JsonRecord, Maybe[JsonAst], "integer!", Int throws IntRangeError] =
-    new ValueAccessor[JsonRecord, Maybe[JsonAst], "integer!", Int throws IntRangeError]:
-      def transform(json: Maybe[JsonAst], params: List[String] = Nil): Int throws IntRangeError =
-        val int = json.avow(using Unsafe).long.toInt
+      : ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int throws IntRangeError] =
+    new ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int throws IntRangeError]:
+      def transform(json: Maybe[Json], params: List[String] = Nil): Int throws IntRangeError =
+        val int = json.avow(using Unsafe).as[Int]
         
         (params.map(Text(_)): @unchecked) match
           case As[Int](min) :: As[Int](max) :: Nil =>
@@ -171,22 +172,17 @@ object JsonRecord:
           case _ :: As[Int](max) :: Nil =>
             if int > max then throw IntRangeError(int, Unset, max) else int
   
-  given maybeNumber: ValueAccessor[JsonRecord, Maybe[JsonAst], "number?", Maybe[Double]] =
-    (value, params) => value.mm: value =>
-      value.asMatchable match
-        case long: Long          => long.toDouble
-        case decimal: BigDecimal => decimal.toDouble
-        case double: Double      => double
-        case _                   => throw JsonValidationError(JsonValidationError.Issue.JsonType(JsonPrimitive.Number, value.primitive))
+  given maybeNumber: ValueAccessor[JsonRecord, Maybe[Json], "number?", Maybe[Double]] =
+    (value, params) => value.mm(_.as[Double])
 
-  given maybeArray: RecordAccessor[JsonRecord, Maybe[JsonAst], "array?", [T] =>> Maybe[IArray[T]]] =
-    (value, make) => value.mm(_.array.map(make))
+  given maybeArray: RecordAccessor[JsonRecord, Maybe[Json], "array?", [T] =>> Maybe[List[T]]] =
+    (value, make) => value.mm(_.as[List[Json]].map(make))
   
-  given maybeObject: RecordAccessor[JsonRecord, Maybe[JsonAst], "object?", [T] =>> Maybe[T]] =
+  given maybeObject: RecordAccessor[JsonRecord, Maybe[Json], "object?", [T] =>> Maybe[T]] =
     (value, make) => value.mm(make(_))
 
-class JsonRecord(data: Maybe[JsonAst], access: String => Maybe[JsonAst] => Any)
-extends Record[Maybe[JsonAst]](data, access)
+class JsonRecord(data: Maybe[Json], access: String => Maybe[Json] => Any)
+extends Record[Maybe[Json]](data, access)
 
 case class JsonSchemaDoc
     (`$schema`: Text, `$id`: Text, title: Text, `type`: Text,
@@ -234,14 +230,11 @@ object JsonSchema:
       case other =>
         RecordField.Value(if required then other else other+"?")
 
-abstract class JsonSchema(val doc: JsonSchemaDoc) extends Schema[Maybe[JsonAst], JsonRecord]:
-  def access(name: String, json: Maybe[JsonAst]): Maybe[JsonAst] = json.mm: json =>
-    json.obj match
-      case (keys: IArray[String], values: IArray[Maybe[JsonAst]]) => keys.indexOf(name) match
-        case -1    => Unset
-        case index => values(index)
+abstract class JsonSchema(val doc: JsonSchemaDoc) extends Schema[Maybe[Json], JsonRecord]:
+  def access(name: String, json: Maybe[Json]): Maybe[Json] = json.mm: json =>
+    json.as[Map[String, Json]].get(name).getOrElse(Unset)
 
-  def make(data: Maybe[JsonAst], access: String => Maybe[JsonAst] => Any): JsonRecord =
+  def make(data: Maybe[Json], access: String => Maybe[Json] => Any): JsonRecord =
     JsonRecord(data, access)
   
   def fields: Map[String, RecordField] = unsafely(doc.fields)

@@ -41,7 +41,7 @@ object Tests extends Suite(t"Villainy tests"):
           "pattern": "a.b",
           "domain": "example.com"
         }"""
-      ).root))
+      )))
     .check()
 
     //erased given CanThrow[JsonSchemaError] = ###
