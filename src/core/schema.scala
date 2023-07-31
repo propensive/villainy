@@ -106,18 +106,18 @@ object JsonRecord:
   given relativeJsonPointer: JsonValueAccessor["relative-json-pointer", Text] = _.as[Text]
   
   // given maybeRegex
-  //     : ValueAccessor[JsonRecord, Maybe[Json], "regex?", Maybe[Regex] throws InvalidRegexError]
+  //     : ValueAccessor[JsonRecord, Maybe[Json], "regex?", Maybe[Regex] throws RegexError]
   //     with
     
   //   def transform
   //       (value: Maybe[Json], params: List[String])
-  //       : Maybe[Regex] throws InvalidRegexError =
-  //     (erased invalidRegex: CanThrow[InvalidRegexError]) ?=>
+  //       : Maybe[Regex] throws RegexError =
+  //     (erased invalidRegex: CanThrow[RegexError]) ?=>
   //       value.mm(_.as[Text]).mm: pattern =>
   //         Regex(pattern)
 
-  given regex: JsonValueAccessor["regex", Regex throws InvalidRegexError] with
-    def access(value: Json): Regex throws InvalidRegexError = Regex(value.as[Text])
+  given regex: JsonValueAccessor["regex", Regex throws RegexError] with
+    def access(value: Json): Regex throws RegexError = Regex(value.as[Text])
 
   given array: RecordAccessor[JsonRecord, Maybe[Json], "array", List] =
     _.avow(using Unsafe).as[List[Json]].map(_)
