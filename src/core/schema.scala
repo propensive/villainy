@@ -92,12 +92,12 @@ object JsonRecord:
     def access(value: Json): Ipv6 throws IpAddressError = Ipv6.parse(value.as[Text])
   
   given uri[UrlType: GenericUrl]: JsonValueAccessor["uri", UrlType] =
-    value => makeUrl[UrlType](value.as[String])
+    value => GenericUrl[UrlType](value.as[Text])
   
   given uriReference: JsonValueAccessor["uri-reference", Text] = _.as[Text]
   
   given iri[UrlType: GenericUrl]: JsonValueAccessor["iri", UrlType] =
-    value => makeUrl[UrlType](value.as[String])
+    value => GenericUrl[UrlType](value.as[Text])
 
   given iriReference: JsonValueAccessor["iri-reference", Text] = _.as[Text]
   given uuid: JsonValueAccessor["uuid", Text] = _.as[Text]
@@ -202,12 +202,12 @@ object JsonSchema:
     def arrayFields =
       items.mm(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
-      ).or(throw Mistake("missing items"))
+      ).or(throw Mistake(msg"Some items were missing"))
     
     def objectFields =
       properties.mm(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
-      ).or(throw Mistake("missing properties"))
+      ).or(throw Mistake(msg"Some properties were missing"))
     
     def field(required: Boolean): RecordField = `type` match
       case "array" =>
