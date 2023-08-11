@@ -24,15 +24,16 @@ import jacinta.*
 import turbulence.*
 import hieroglyph.*, charEncoders.utf8
 import spectacular.*
-import digression.*
+import perforate.*
 import kaleidoscope.*
 
-//import unsafeExceptions.canThrowAny
+import unsafeExceptions.canThrowAny
+import errorHandlers.throwUnsafely
 
 object Tests extends Suite(t"Villainy tests"):
   def run(): Unit =
     val record = test(t"Construct a new record"):
-      ExampleSchema.record(unsafely(Json.parse(
+      ExampleSchema.record(Json.parse(
         t"""{
           "name": "Jim",
           "sub": { "date": "11/12/20" },
@@ -43,10 +44,8 @@ object Tests extends Suite(t"Villainy tests"):
           "pattern": "a.b",
           "domain": "example.com"
         }"""
-      )))
+      ))
     .check()
-
-    //erased given CanThrow[JsonSchemaError] = ###
 
     test(t"Get a text value"):
       record.name
@@ -69,11 +68,16 @@ object Tests extends Suite(t"Villainy tests"):
     .assert(_ == 0.8)
     
     test(t"A bad pattern-checked value throws an exceptions"):
-      unsafely(capture[JsonValidationError](record.children.head.color))
+      // FIXME: This should use `capture` to grab the error, but it doesn't seem to work, perhaps because
+      // `throwUnsafely` has higher precedence.
+      try
+        val result = record.children.head.color
+        throw UnexpectedSuccessError(result)
+      catch case error: JsonValidationError => error
     .assert(_ == JsonValidationError(JsonValidationError.Issue.PatternMismatch(t"green", r"#[0-9a-f]{6}")))
     
     test(t"A bad pattern-checked value throws an exceptions"):
-      unsafely(record.children(1).color)
+      record.children(1).color
     .assert(_ == t"#ff0000")
     
     test(t"Get a nested item value"):
@@ -81,12 +85,10 @@ object Tests extends Suite(t"Villainy tests"):
     .assert(_ == t"11/12/20")
     
     test(t"Get a regex value"):
-      unsafely:
-        record.pattern
-    .assert(_ == unsafely(Regex(t"a.b")))
+      record.pattern
+    .assert(_ == Regex(t"a.b"))
     
     test(t"Get some values in a list"):
-      unsafely:
-        capture:
-          record.children.map { elem => elem.height }.to(List)
+      capture:
+        record.children.map { elem => elem.height }.to(List)
     .assert(_ == IntRangeError(100, 1, 99))

@@ -21,10 +21,13 @@ import turbulence.*
 import gossamer.*
 import digression.*
 import polyvinyl.*
+import perforate.*
 import merino.*
 import hieroglyph.*, charEncoders.utf8
 
-object ExampleSchema extends JsonSchema(unsafely(Json.parse(t"""{
+import errorHandlers.throwUnsafely
+
+object ExampleSchema extends JsonSchema(Json.parse(t"""{
   "$$id": "abc",
   "$$schema": "schema",
   "title": "Title",
@@ -52,7 +55,7 @@ object ExampleSchema extends JsonSchema(unsafely(Json.parse(t"""{
       }
     }
   }
-}""").as[JsonSchemaDoc])):
+}""").as[JsonSchemaDoc]):
   import RecordField.*
   
   transparent inline def record(json: Json): JsonRecord = ${build('json)}

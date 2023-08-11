@@ -18,7 +18,8 @@ package villainy
 
 import polyvinyl.*
 import rudiments.*
-import digression.*
+import perforate.*
+import fulminate.*
 import jacinta.*
 import kaleidoscope.*
 import anticipation.*
@@ -27,7 +28,7 @@ import merino.*
 
 import scala.compiletime.*
 
-import unsafeExceptions.canThrowAny
+import errorHandlers.throwUnsafely
 
 object IntRangeError:
   def range(minimum: Maybe[Int], maximum: Maybe[Int]): Text =
@@ -62,14 +63,14 @@ object JsonValidationError:
 import JsonValidationError.Issue, Issue.*
 
 case class JsonValidationError(issue: Issue)
-extends Error(msg"the JSON was not valid according to the schema")
+extends Error(msg"the JSON was not valid according to the schema because $issue")
 
 trait JsonValueAccessor[NameType <: Label, ValueType]
 extends ValueAccessor[JsonRecord, Maybe[Json], NameType, ValueType]:
   def access(value: Json): ValueType
     
   def transform(value: Maybe[Json], params: List[String]): ValueType =
-    value.mm(access(_)).or(throw JsonValidationError(MissingValue))
+    value.mm(access(_)).or(abort(JsonValidationError(MissingValue)))
 
 object JsonRecord:
 
@@ -85,11 +86,11 @@ object JsonRecord:
   given idnEmail: JsonValueAccessor["idn-email", Text] = _.as[Text]
   given hostname: JsonValueAccessor["hostname", Text] = _.as[Text]
   given idnHostname: JsonValueAccessor["idn-hustname", Text] = _.as[Text]
-  given ipv4: JsonValueAccessor["ipv4", Ipv4 throws IpAddressError] with
-    def access(value: Json): Ipv4 throws IpAddressError = Ipv4.parse(value.as[Text])
+  given ipv4: JsonValueAccessor["ipv4", Ipv4 raises IpAddressError] with
+    def access(value: Json): Ipv4 raises IpAddressError = Ipv4.parse(value.as[Text])
   
-  given ipv6: JsonValueAccessor["ipv6", Ipv6 throws IpAddressError] with
-    def access(value: Json): Ipv6 throws IpAddressError = Ipv6.parse(value.as[Text])
+  given ipv6: JsonValueAccessor["ipv6", Ipv6 raises IpAddressError] with
+    def access(value: Json): Ipv6 raises IpAddressError = Ipv6.parse(value.as[Text])
   
   given uri[UrlType: GenericUrl]: JsonValueAccessor["uri", UrlType] =
     value => GenericUrl[UrlType](value.as[Text])
@@ -106,18 +107,18 @@ object JsonRecord:
   given relativeJsonPointer: JsonValueAccessor["relative-json-pointer", Text] = _.as[Text]
   
   // given maybeRegex
-  //     : ValueAccessor[JsonRecord, Maybe[Json], "regex?", Maybe[Regex] throws RegexError]
+  //     : ValueAccessor[JsonRecord, Maybe[Json], "regex?", Maybe[Regex] raises RegexError]
   //     with
     
   //   def transform
   //       (value: Maybe[Json], params: List[String])
-  //       : Maybe[Regex] throws RegexError =
-  //     (erased invalidRegex: CanThrow[RegexError]) ?=>
+  //       : Maybe[Regex] raises RegexError =
+  //     (erased invalidRegex: Raises[RegexError]) ?=>
   //       value.mm(_.as[Text]).mm: pattern =>
   //         Regex(pattern)
 
-  given regex: JsonValueAccessor["regex", Regex throws RegexError] with
-    def access(value: Json): Regex throws RegexError = Regex(value.as[Text])
+  given regex: JsonValueAccessor["regex", Regex raises RegexError] with
+    def access(value: Json): Regex raises RegexError = Regex(value.as[Text])
 
   given array: RecordAccessor[JsonRecord, Maybe[Json], "array", List] =
     _.avow(using Unsafe).as[List[Json]].map(_)
@@ -139,8 +140,8 @@ object JsonRecord:
           case List(pattern: String) =>
             val regex = Regex(Text(pattern))
             if regex.matches(value.as[Text]) then value.as[Text]
-            else throw JsonValidationError(PatternMismatch(value.as[Text], regex))
-      .or(throw JsonValidationError(MissingValue))
+            else abort(JsonValidationError(PatternMismatch(value.as[Text], regex)))
+      .or(abort(JsonValidationError(MissingValue)))
 
   given maybePattern: ValueAccessor[JsonRecord, Maybe[Json], "pattern?", Maybe[Text]] with
     def transform
@@ -151,26 +152,26 @@ object JsonRecord:
           case pattern :: Nil =>
             val regex = Regex(Text(pattern))
             if regex.matches(value.as[Text]) then value.as[Text]
-            else throw JsonValidationError(PatternMismatch(value.as[Text], regex))
+            else abort(JsonValidationError(PatternMismatch(value.as[Text], regex)))
   
   given maybeInteger: ValueAccessor[JsonRecord, Maybe[Json], "integer?", Maybe[Int]] =
     (value, params) => value.mm(_.as[Int])
 
   given boundedInteger
-      : ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int throws IntRangeError] =
-    new ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int throws IntRangeError]:
-      def transform(json: Maybe[Json], params: List[String] = Nil): Int throws IntRangeError =
+      : ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int raises IntRangeError] =
+    new ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int raises IntRangeError]:
+      def transform(json: Maybe[Json], params: List[String] = Nil): Int raises IntRangeError =
         val int = json.avow(using Unsafe).as[Int]
         
         (params.map(Text(_)): @unchecked) match
           case As[Int](min) :: As[Int](max) :: Nil =>
-            if int < min || int > max then throw IntRangeError(int, min, max) else int
+            if int < min || int > max then abort(IntRangeError(int, min, max)) else int
           
           case As[Int](min) :: _ :: Nil =>
-            if int < min then throw IntRangeError(int, min, Unset) else int
+            if int < min then abort(IntRangeError(int, min, Unset)) else int
           
           case _ :: As[Int](max) :: Nil =>
-            if int > max then throw IntRangeError(int, Unset, max) else int
+            if int > max then abort(IntRangeError(int, Unset, max)) else int
   
   given maybeNumber: ValueAccessor[JsonRecord, Maybe[Json], "number?", Maybe[Double]] =
     (value, params) => value.mm(_.as[Double])
