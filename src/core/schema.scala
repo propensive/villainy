@@ -92,13 +92,13 @@ object JsonRecord:
   given ipv6: JsonValueAccessor["ipv6", Ipv6 raises IpAddressError] with
     def access(value: Json): Ipv6 raises IpAddressError = Ipv6.parse(value.as[Text])
   
-  given uri[UrlType: GenericUrl]: JsonValueAccessor["uri", UrlType] =
-    value => GenericUrl[UrlType](value.as[Text])
+  given uri[UrlType: SpecificUrl]: JsonValueAccessor["uri", UrlType] =
+    value => SpecificUrl[UrlType](value.as[Text])
   
   given uriReference: JsonValueAccessor["uri-reference", Text] = _.as[Text]
   
-  given iri[UrlType: GenericUrl]: JsonValueAccessor["iri", UrlType] =
-    value => GenericUrl[UrlType](value.as[Text])
+  given iri[UrlType: SpecificUrl]: JsonValueAccessor["iri", UrlType] =
+    value => SpecificUrl[UrlType](value.as[Text])
 
   given iriReference: JsonValueAccessor["iri-reference", Text] = _.as[Text]
   given uuid: JsonValueAccessor["uuid", Text] = _.as[Text]
