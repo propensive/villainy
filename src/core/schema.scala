@@ -45,7 +45,7 @@ object JsonValidationError:
     case PatternMismatch(value: Text, pattern: Regex)
 
   object Issue:
-    given AsMessage[Issue] =
+    given MessageShow[Issue] =
       case JsonType(expected, found) =>
         msg"expected JSON type $expected, but found $found"
       
