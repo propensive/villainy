@@ -18,6 +18,7 @@ package villainy
 
 import polyvinyl.*
 import rudiments.*
+import inimitable.*
 import perforate.*
 import fulminate.*
 import jacinta.*
@@ -110,7 +111,10 @@ object JsonRecord:
     value => SpecificUrl[UrlType](value.as[Text])
 
   given iriReference: JsonValueAccessor["iri-reference", Text] = _.as[Text]
-  given uuid: JsonValueAccessor["uuid", Text] = _.as[Text]
+  
+  given uuid: JsonValueAccessor["uuid", Uuid raises UuidError] with
+    def access(value: Json): Uuid raises UuidError = Uuid.parse(value.as[Text])
+
   given uriTemplate: JsonValueAccessor["uri-template", Text] = _.as[Text]
   given jsonPointer: JsonValueAccessor["json-pointer", Text] = _.as[Text]
   given relativeJsonPointer: JsonValueAccessor["relative-json-pointer", Text] = _.as[Text]
