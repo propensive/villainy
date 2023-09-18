@@ -89,8 +89,12 @@ object JsonRecord:
   given idnEmail: JsonValueAccessor["idn-email", EmailAddress raises EmailAddressError] with
     def access(value: Json): EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
   
-  given hostname: JsonValueAccessor["hostname", Text] = _.as[Text]
-  given idnHostname: JsonValueAccessor["idn-hustname", Text] = _.as[Text]
+  given hostname: JsonValueAccessor["hostname", Hostname raises HostnameError] with
+    def access(value: Json): Hostname raises HostnameError = Hostname.parse(value.as[Text])
+  
+  given idnHostname: JsonValueAccessor["idn-hostname", Hostname raises HostnameError] with
+    def access(value: Json): Hostname raises HostnameError = Hostname.parse(value.as[Text])
+  
   given ipv4: JsonValueAccessor["ipv4", Ipv4 raises IpAddressError] with
     def access(value: Json): Ipv4 raises IpAddressError = Ipv4.parse(value.as[Text])
   
