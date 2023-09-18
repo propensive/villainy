@@ -82,7 +82,10 @@ object JsonRecord:
   given date: JsonValueAccessor["date", Text] = _.as[Text]          // Use Anticipation/Aviation
   given time: JsonValueAccessor["time", Text] = _.as[Text]          // Use Anticipation/Aviation
   given duration: JsonValueAccessor["duration", Text] = _.as[Text]  // Use Anticipation/Aviation
-  given email: JsonValueAccessor["email", Text] = _.as[Text]
+  
+  given email: JsonValueAccessor["email", EmailAddress raises EmailAddressError] with
+    def access(value: Json): EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
+  
   given idnEmail: JsonValueAccessor["idn-email", Text] = _.as[Text]
   given hostname: JsonValueAccessor["hostname", Text] = _.as[Text]
   given idnHostname: JsonValueAccessor["idn-hustname", Text] = _.as[Text]
