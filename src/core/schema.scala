@@ -39,14 +39,14 @@ case class IntRangeError(value: Int, minimum: Maybe[Int], maximum: Maybe[Int])
 extends Error(msg"the integer $value is not in the range ${IntRangeError.range(minimum, maximum)}")
 
 object JsonValidationError:
-  enum Issue:
+  enum Reason:
     case JsonType(expected: JsonPrimitive, found: JsonPrimitive)
     case MissingValue
     case IntOutOfRange(value: Int, minimum: Maybe[Int], maximum: Maybe[Int])
     case PatternMismatch(value: Text, pattern: Regex)
 
-  object Issue:
-    given MessageShow[Issue] =
+  object Reason:
+    given Communicable[Reason] =
       case JsonType(expected, found) =>
         msg"expected JSON type $expected, but found $found"
       
@@ -61,10 +61,10 @@ object JsonValidationError:
       case PatternMismatch(value, pattern) =>
         msg"the value did not conform to the regular expression ${pattern.pattern}"
 
-import JsonValidationError.Issue, Issue.*
+import JsonValidationError.Reason, Reason.*
 
-case class JsonValidationError(issue: Issue)
-extends Error(msg"the JSON was not valid according to the schema because $issue")
+case class JsonValidationError(reason: Reason)
+extends Error(msg"the JSON was not valid according to the schema because $reason")
 
 trait JsonValueAccessor[NameType <: Label, ValueType]
 extends ValueAccessor[JsonRecord, Maybe[Json], NameType, ValueType]:
