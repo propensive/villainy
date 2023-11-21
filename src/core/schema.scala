@@ -134,10 +134,10 @@ object JsonRecord:
     def access(value: Json): Regex raises RegexError = Regex(value.as[Text])
 
   given array: RecordAccessor[JsonRecord, Maybe[Json], "array", List] =
-    _.avow(using Unsafe).as[List[Json]].map(_)
+    _.vouch(using Unsafe).as[List[Json]].map(_)
   
   given obj: RecordAccessor[JsonRecord, Maybe[Json], "object", [T] =>> T] = (value, make) =>
-    make(value.avow(using Unsafe))
+    make(value.vouch(using Unsafe))
   
   given maybeBoolean: ValueAccessor[JsonRecord, Maybe[Json], "boolean?", Maybe[Boolean]] =
     (value, params) => value.mm(_.as[Boolean])
@@ -174,7 +174,7 @@ object JsonRecord:
       : ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int raises IntRangeError] =
     new ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int raises IntRangeError]:
       def transform(json: Maybe[Json], params: List[String] = Nil): Int raises IntRangeError =
-        val int = json.avow(using Unsafe).as[Int]
+        val int = json.vouch(using Unsafe).as[Int]
         
         (params.map(Text(_)): @unchecked) match
           case As[Int](min) :: As[Int](max) :: Nil =>
