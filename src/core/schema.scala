@@ -33,7 +33,7 @@ import errorHandlers.throwUnsafely
 
 object IntRangeError:
   def range(minimum: Maybe[Int], maximum: Maybe[Int]): Text =
-    Text(s"${minimum.mm { n => s"$n ≤ " }.or("")}x${minimum.mm { n => s" ≤ $n" }.or("")}")
+    Text(s"${minimum.let { n => s"$n ≤ " }.or("")}x${minimum.let { n => s" ≤ $n" }.or("")}")
 
 case class IntRangeError(value: Int, minimum: Maybe[Int], maximum: Maybe[Int])
 extends Error(msg"the integer $value is not in the range ${IntRangeError.range(minimum, maximum)}")
@@ -71,7 +71,7 @@ extends ValueAccessor[JsonRecord, Maybe[Json], NameType, ValueType]:
   def access(value: Json): ValueType
     
   def transform(value: Maybe[Json], params: List[String]): ValueType =
-    value.mm(access(_)).or(abort(JsonValidationError(MissingValue)))
+    value.let(access(_)).or(abort(JsonValidationError(MissingValue)))
 
 object JsonRecord:
 
@@ -127,7 +127,7 @@ object JsonRecord:
   //       (value: Maybe[Json], params: List[String])
   //       : Maybe[Regex] raises RegexError =
   //     (erased invalidRegex: Raises[RegexError]) ?=>
-  //       value.mm(_.as[Text]).mm: pattern =>
+  //       value.let(_.as[Text]).let: pattern =>
   //         Regex(pattern)
 
   given regex: JsonValueAccessor["regex", Regex raises RegexError] with
@@ -140,15 +140,15 @@ object JsonRecord:
     make(value.vouch(using Unsafe))
   
   given maybeBoolean: ValueAccessor[JsonRecord, Maybe[Json], "boolean?", Maybe[Boolean]] =
-    (value, params) => value.mm(_.as[Boolean])
+    (value, params) => value.let(_.as[Boolean])
   
   given maybeString: ValueAccessor[JsonRecord, Maybe[Json], "string?", Maybe[Text]] =
-    (value, params) => value.mm(_.as[Text])
+    (value, params) => value.let(_.as[Text])
 
   given pattern
       : ValueAccessor[JsonRecord, Maybe[Json], "pattern", Text] with
     def transform(value: Maybe[Json], params: List[String]): Text =
-      value.mm: value =>
+      value.let: value =>
         (params: @unchecked) match
           case List(pattern: String) =>
             val regex = Regex(Text(pattern))
@@ -160,7 +160,7 @@ object JsonRecord:
     def transform
         (value: Maybe[Json], params: List[String] = Nil)
         : Maybe[Text] =
-      value.mm: value =>
+      value.let: value =>
         (params: @unchecked) match
           case pattern :: Nil =>
             val regex = Regex(Text(pattern))
@@ -168,7 +168,7 @@ object JsonRecord:
             else abort(JsonValidationError(PatternMismatch(value.as[Text], regex)))
   
   given maybeInteger: ValueAccessor[JsonRecord, Maybe[Json], "integer?", Maybe[Int]] =
-    (value, params) => value.mm(_.as[Int])
+    (value, params) => value.let(_.as[Int])
 
   given boundedInteger
       : ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int raises IntRangeError] =
@@ -187,13 +187,13 @@ object JsonRecord:
             if int > max then abort(IntRangeError(int, Unset, max)) else int
   
   given maybeNumber: ValueAccessor[JsonRecord, Maybe[Json], "number?", Maybe[Double]] =
-    (value, params) => value.mm(_.as[Double])
+    (value, params) => value.let(_.as[Double])
 
   given maybeArray: RecordAccessor[JsonRecord, Maybe[Json], "array?", [T] =>> Maybe[List[T]]] =
-    (value, make) => value.mm(_.as[List[Json]].map(make))
+    (value, make) => value.let(_.as[List[Json]].map(make))
   
   given maybeObject: RecordAccessor[JsonRecord, Maybe[Json], "object?", [T] =>> Maybe[T]] =
-    (value, make) => value.mm(make(_))
+    (value, make) => value.let(make(_))
 
 class JsonRecord(data: Maybe[Json], access: String => Maybe[Json] => Any)
 extends Record[Maybe[Json]](data, access)
@@ -214,12 +214,12 @@ object JsonSchema:
     def requiredFields: Set[String] = required.or(Set())
     
     def arrayFields =
-      items.mm(_.map: (key, value) =>
+      items.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
       ).or(throw Mistake(msg"Some items were missing"))
     
     def objectFields =
-      properties.mm(_.map: (key, value) =>
+      properties.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
       ).or(throw Mistake(msg"Some properties were missing"))
     
@@ -233,19 +233,19 @@ object JsonSchema:
       case "string" =>
         val suffix = if required then "" else "?"
         
-        pattern.mm: pattern =>
+        pattern.let: pattern =>
           RecordField.Value("pattern"+suffix, pattern)
         .or(RecordField.Value(format.or("string")+suffix))
       
       case "integer" => 
         val suffix = if minimum.unset && maximum.unset then (if required then "" else "?") else "!"
-        RecordField.Value("integer"+suffix, minimum.mm(_.toString).or(""), maximum.mm(_.toString).or(""))
+        RecordField.Value("integer"+suffix, minimum.let(_.toString).or(""), maximum.let(_.toString).or(""))
       
       case other =>
         RecordField.Value(if required then other else other+"?")
 
 abstract class JsonSchema(val doc: JsonSchemaDoc) extends Schema[Maybe[Json], JsonRecord]:
-  def access(name: String, json: Maybe[Json]): Maybe[Json] = json.mm: json =>
+  def access(name: String, json: Maybe[Json]): Maybe[Json] = json.let: json =>
     json.as[Map[String, Json]].get(name).getOrElse(Unset)
 
   def make(data: Maybe[Json], access: String => Maybe[Json] => Any): JsonRecord =
