@@ -54,8 +54,8 @@ object JsonValidationError:
         msg"the value was missing"
       
       case IntOutOfRange(value, minimum, maximum) =>
-        if minimum.unset then msg"the value was greater than the maximum, ${maximum.or(0)}"
-        else if maximum.unset then msg"the value was less than the minimum, ${minimum.or(0)}"
+        if minimum.absent then msg"the value was greater than the maximum, ${maximum.or(0)}"
+        else if maximum.absent then msg"the value was less than the minimum, ${minimum.or(0)}"
         else msg"the value was not between ${minimum.or(0)} and ${maximum.or(0)}"
       
       case PatternMismatch(value, pattern) =>
@@ -238,7 +238,7 @@ object JsonSchema:
         .or(RecordField.Value(format.or("string")+suffix))
       
       case "integer" => 
-        val suffix = if minimum.unset && maximum.unset then (if required then "" else "?") else "!"
+        val suffix = if minimum.absent && maximum.absent then (if required then "" else "?") else "!"
         RecordField.Value("integer"+suffix, minimum.let(_.toString).or(""), maximum.let(_.toString).or(""))
       
       case other =>
