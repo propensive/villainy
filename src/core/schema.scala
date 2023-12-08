@@ -32,17 +32,17 @@ import scala.compiletime.*
 import errorHandlers.throwUnsafely
 
 object IntRangeError:
-  def range(minimum: Maybe[Int], maximum: Maybe[Int]): Text =
+  def range(minimum: Optional[Int], maximum: Optional[Int]): Text =
     Text(s"${minimum.let { n => s"$n ≤ " }.or("")}x${minimum.let { n => s" ≤ $n" }.or("")}")
 
-case class IntRangeError(value: Int, minimum: Maybe[Int], maximum: Maybe[Int])
+case class IntRangeError(value: Int, minimum: Optional[Int], maximum: Optional[Int])
 extends Error(msg"the integer $value is not in the range ${IntRangeError.range(minimum, maximum)}")
 
 object JsonValidationError:
   enum Reason:
     case JsonType(expected: JsonPrimitive, found: JsonPrimitive)
     case MissingValue
-    case IntOutOfRange(value: Int, minimum: Maybe[Int], maximum: Maybe[Int])
+    case IntOutOfRange(value: Int, minimum: Optional[Int], maximum: Optional[Int])
     case PatternMismatch(value: Text, pattern: Regex)
 
   object Reason:
@@ -67,10 +67,10 @@ case class JsonValidationError(reason: Reason)
 extends Error(msg"the JSON was not valid according to the schema because $reason")
 
 trait JsonValueAccessor[NameType <: Label, ValueType]
-extends ValueAccessor[JsonRecord, Maybe[Json], NameType, ValueType]:
+extends ValueAccessor[JsonRecord, Optional[Json], NameType, ValueType]:
   def access(value: Json): ValueType
     
-  def transform(value: Maybe[Json], params: List[String]): ValueType =
+  def transform(value: Optional[Json], params: List[String]): ValueType =
     value.let(access(_)).or(abort(JsonValidationError(MissingValue)))
 
 object JsonRecord:
@@ -120,12 +120,12 @@ object JsonRecord:
   given relativeJsonPointer: JsonValueAccessor["relative-json-pointer", Text] = _.as[Text]
   
   // given maybeRegex
-  //     : ValueAccessor[JsonRecord, Maybe[Json], "regex?", Maybe[Regex] raises RegexError]
+  //     : ValueAccessor[JsonRecord, Optional[Json], "regex?", Optional[Regex] raises RegexError]
   //     with
     
   //   def transform
-  //       (value: Maybe[Json], params: List[String])
-  //       : Maybe[Regex] raises RegexError =
+  //       (value: Optional[Json], params: List[String])
+  //       : Optional[Regex] raises RegexError =
   //     (erased invalidRegex: Raises[RegexError]) ?=>
   //       value.let(_.as[Text]).let: pattern =>
   //         Regex(pattern)
@@ -133,21 +133,21 @@ object JsonRecord:
   given regex: JsonValueAccessor["regex", Regex raises RegexError] with
     def access(value: Json): Regex raises RegexError = Regex(value.as[Text])
 
-  given array: RecordAccessor[JsonRecord, Maybe[Json], "array", List] =
+  given array: RecordAccessor[JsonRecord, Optional[Json], "array", List] =
     _.vouch(using Unsafe).as[List[Json]].map(_)
   
-  given obj: RecordAccessor[JsonRecord, Maybe[Json], "object", [T] =>> T] = (value, make) =>
+  given obj: RecordAccessor[JsonRecord, Optional[Json], "object", [T] =>> T] = (value, make) =>
     make(value.vouch(using Unsafe))
   
-  given maybeBoolean: ValueAccessor[JsonRecord, Maybe[Json], "boolean?", Maybe[Boolean]] =
+  given maybeBoolean: ValueAccessor[JsonRecord, Optional[Json], "boolean?", Optional[Boolean]] =
     (value, params) => value.let(_.as[Boolean])
   
-  given maybeString: ValueAccessor[JsonRecord, Maybe[Json], "string?", Maybe[Text]] =
+  given maybeString: ValueAccessor[JsonRecord, Optional[Json], "string?", Optional[Text]] =
     (value, params) => value.let(_.as[Text])
 
   given pattern
-      : ValueAccessor[JsonRecord, Maybe[Json], "pattern", Text] with
-    def transform(value: Maybe[Json], params: List[String]): Text =
+      : ValueAccessor[JsonRecord, Optional[Json], "pattern", Text] with
+    def transform(value: Optional[Json], params: List[String]): Text =
       value.let: value =>
         (params: @unchecked) match
           case List(pattern: String) =>
@@ -156,10 +156,10 @@ object JsonRecord:
             else abort(JsonValidationError(PatternMismatch(value.as[Text], regex)))
       .or(abort(JsonValidationError(MissingValue)))
 
-  given maybePattern: ValueAccessor[JsonRecord, Maybe[Json], "pattern?", Maybe[Text]] with
+  given maybePattern: ValueAccessor[JsonRecord, Optional[Json], "pattern?", Optional[Text]] with
     def transform
-        (value: Maybe[Json], params: List[String] = Nil)
-        : Maybe[Text] =
+        (value: Optional[Json], params: List[String] = Nil)
+        : Optional[Text] =
       value.let: value =>
         (params: @unchecked) match
           case pattern :: Nil =>
@@ -167,13 +167,13 @@ object JsonRecord:
             if regex.matches(value.as[Text]) then value.as[Text]
             else abort(JsonValidationError(PatternMismatch(value.as[Text], regex)))
   
-  given maybeInteger: ValueAccessor[JsonRecord, Maybe[Json], "integer?", Maybe[Int]] =
+  given maybeInteger: ValueAccessor[JsonRecord, Optional[Json], "integer?", Optional[Int]] =
     (value, params) => value.let(_.as[Int])
 
   given boundedInteger
-      : ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int raises IntRangeError] =
-    new ValueAccessor[JsonRecord, Maybe[Json], "integer!", Int raises IntRangeError]:
-      def transform(json: Maybe[Json], params: List[String] = Nil): Int raises IntRangeError =
+      : ValueAccessor[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError] =
+    new ValueAccessor[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError]:
+      def transform(json: Optional[Json], params: List[String] = Nil): Int raises IntRangeError =
         val int = json.vouch(using Unsafe).as[Int]
         
         (params.map(Text(_)): @unchecked) match
@@ -186,21 +186,21 @@ object JsonRecord:
           case _ :: As[Int](max) :: Nil =>
             if int > max then abort(IntRangeError(int, Unset, max)) else int
   
-  given maybeNumber: ValueAccessor[JsonRecord, Maybe[Json], "number?", Maybe[Double]] =
+  given maybeNumber: ValueAccessor[JsonRecord, Optional[Json], "number?", Optional[Double]] =
     (value, params) => value.let(_.as[Double])
 
-  given maybeArray: RecordAccessor[JsonRecord, Maybe[Json], "array?", [T] =>> Maybe[List[T]]] =
+  given maybeArray: RecordAccessor[JsonRecord, Optional[Json], "array?", [T] =>> Optional[List[T]]] =
     (value, make) => value.let(_.as[List[Json]].map(make))
   
-  given maybeObject: RecordAccessor[JsonRecord, Maybe[Json], "object?", [T] =>> Maybe[T]] =
+  given maybeObject: RecordAccessor[JsonRecord, Optional[Json], "object?", [T] =>> Optional[T]] =
     (value, make) => value.let(make(_))
 
-class JsonRecord(data: Maybe[Json], access: String => Maybe[Json] => Any)
-extends Record[Maybe[Json]](data, access)
+class JsonRecord(data: Optional[Json], access: String => Optional[Json] => Any)
+extends Record[Optional[Json]](data, access)
 
 case class JsonSchemaDoc
     (`$schema`: Text, `$id`: Text, title: Text, `type`: Text,
-        properties: Map[String, JsonSchema.Property], required: Maybe[Set[String]]):
+        properties: Map[String, JsonSchema.Property], required: Optional[Set[String]]):
   lazy val requiredFields: Set[String] = required.or(Set())
   
   def fields: Map[String, RecordField] =
@@ -208,9 +208,9 @@ case class JsonSchemaDoc
 
 object JsonSchema:
   case class Property
-      (`type`: String, properties: Maybe[Map[String, Json]], items: Maybe[Map[String, Json]],
-          required: Maybe[Set[String]], minimum: Maybe[Int], maximum: Maybe[Int],
-          format: Maybe[String], pattern: Maybe[String]):
+      (`type`: String, properties: Optional[Map[String, Json]], items: Optional[Map[String, Json]],
+          required: Optional[Set[String]], minimum: Optional[Int], maximum: Optional[Int],
+          format: Optional[String], pattern: Optional[String]):
     def requiredFields: Set[String] = required.or(Set())
     
     def arrayFields =
@@ -244,11 +244,11 @@ object JsonSchema:
       case other =>
         RecordField.Value(if required then other else other+"?")
 
-abstract class JsonSchema(val doc: JsonSchemaDoc) extends Schema[Maybe[Json], JsonRecord]:
-  def access(name: String, json: Maybe[Json]): Maybe[Json] = json.let: json =>
+abstract class JsonSchema(val doc: JsonSchemaDoc) extends Schema[Optional[Json], JsonRecord]:
+  def access(name: String, json: Optional[Json]): Optional[Json] = json.let: json =>
     json.as[Map[String, Json]].get(name).getOrElse(Unset)
 
-  def make(data: Maybe[Json], access: String => Maybe[Json] => Any): JsonRecord =
+  def make(data: Optional[Json], access: String => Optional[Json] => Any): JsonRecord =
     JsonRecord(data, access)
   
   def fields: Map[String, RecordField] = unsafely(doc.fields)
