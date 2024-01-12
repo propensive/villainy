@@ -82,3 +82,4 @@ val person = PersonSchema.record(json)
 We can then safely access fields such as, `person.name.first` (a `String`) and `person.age` (an `Int`), but
 attempts to access fields not defined in the schema, such as `person.lastName`, will be compile errors.
 
+
