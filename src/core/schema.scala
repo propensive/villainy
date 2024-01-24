@@ -17,6 +17,7 @@
 package villainy
 
 import polyvinyl.*
+import vacuous.*
 import rudiments.*
 import inimitable.*
 import perforate.*
