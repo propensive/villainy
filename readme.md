@@ -23,8 +23,8 @@ integration is provided by [Jacinta](https://github.com/propensive/jacinta)
 ## Availability Plan
 
 Villainy has not yet been published. The medium-term plan is to build Villainy
-with [Fury](/propensive/fury) and to publish it as a source build on
-[Vent](/propensive/vent). This will enable ordinary users to write and build
+with [Fury](https://github.com/propensive/fury) and to publish it as a source build on
+[Vent](https://github.com/propensive/vent). This will enable ordinary users to write and build
 software which depends on Villainy.
 
 Subsequently, Villainy will also be made available as a binary in the Maven
@@ -117,6 +117,7 @@ val person = PersonSchema.record(json)
 
 We can then safely access fields such as, `person.name.first` (a `String`) and `person.age` (an `Int`), but
 attempts to access fields not defined in the schema, such as `person.lastName`, will be compile errors.
+
 
 
 
