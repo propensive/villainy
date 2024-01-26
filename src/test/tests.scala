@@ -75,7 +75,7 @@ object Tests extends Suite(t"Villainy tests"):
         val result = record.children.head.color
         throw UnexpectedSuccessError(result)
       catch case error: JsonValidationError => error
-    .assert(_ == JsonValidationError(JsonValidationError.Issue.PatternMismatch(t"green", r"#[0-9a-f]{6}")))
+    .assert(_ == JsonValidationError(JsonValidationError.Reason.PatternMismatch(t"green", r"#[0-9a-f]{6}")))
     
     test(t"A bad pattern-checked value throws an exceptions"):
       record.children(1).color
