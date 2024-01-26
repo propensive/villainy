@@ -234,9 +234,7 @@ object JsonSchema:
       case "string" =>
         val suffix = if required then "" else "?"
         
-        pattern.let: pattern =>
-          RecordField.Value("pattern"+suffix, pattern)
-        .or(RecordField.Value(format.or("string")+suffix))
+        pattern.let(RecordField.Value("pattern"+suffix, _)).or(RecordField.Value(format.or("string")+suffix))
       
       case "integer" => 
         val suffix = if minimum.absent && maximum.absent then (if required then "" else "?") else "!"

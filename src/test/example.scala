@@ -19,7 +19,6 @@ package villainy
 import jacinta.*
 import turbulence.*
 import gossamer.*
-import digression.*
 import polyvinyl.*
 import perforate.*
 import merino.*
