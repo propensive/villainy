@@ -25,6 +25,7 @@ import turbulence.*
 import hieroglyph.*, charEncoders.utf8
 import spectacular.*
 import perforate.*
+import vacuous.*
 import kaleidoscope.*
 
 import unsafeExceptions.canThrowAny
