@@ -20,7 +20,7 @@ import polyvinyl.*
 import vacuous.*
 import rudiments.*
 import inimitable.*
-import perforate.*
+import contingency.*
 import fulminate.*
 import jacinta.*
 import kaleidoscope.*
