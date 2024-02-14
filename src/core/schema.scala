@@ -217,12 +217,12 @@ object JsonSchema:
     def arrayFields =
       items.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
-      ).or(throw Mistake(msg"Some items were missing"))
+      ).or(throw Panic(msg"Some items were missing"))
     
     def objectFields =
       properties.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
-      ).or(throw Mistake(msg"Some properties were missing"))
+      ).or(throw Panic(msg"Some properties were missing"))
     
     def field(required: Boolean): RecordField = `type` match
       case "array" =>
