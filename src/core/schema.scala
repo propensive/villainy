@@ -48,11 +48,8 @@ object JsonValidationError:
 
   object Reason:
     given Communicable[Reason] =
-      case JsonType(expected, found) =>
-        msg"expected JSON type $expected, but found $found"
-      
-      case MissingValue =>
-        msg"the value was missing"
+      case JsonType(expected, found) => msg"expected JSON type $expected, but found $found"
+      case MissingValue              => msg"the value was missing"
       
       case IntOutOfRange(value, minimum, maximum) =>
         if minimum.absent then msg"the value was greater than the maximum, ${maximum.or(0)}"
@@ -137,8 +134,8 @@ object JsonRecord:
   given array: RecordAccessor[JsonRecord, Optional[Json], "array", List] =
     _.vouch(using Unsafe).as[List[Json]].map(_)
   
-  given obj: RecordAccessor[JsonRecord, Optional[Json], "object", [T] =>> T] = (value, make) =>
-    make(value.vouch(using Unsafe))
+  given obj: RecordAccessor[JsonRecord, Optional[Json], "object", [Type] =>> Type] =
+    (value, make) => make(value.vouch(using Unsafe))
   
   given maybeBoolean: ValueAccessor[JsonRecord, Optional[Json], "boolean?", Optional[Boolean]] =
     (value, params) => value.let(_.as[Boolean])
@@ -146,8 +143,7 @@ object JsonRecord:
   given maybeString: ValueAccessor[JsonRecord, Optional[Json], "string?", Optional[Text]] =
     (value, params) => value.let(_.as[Text])
 
-  given pattern
-      : ValueAccessor[JsonRecord, Optional[Json], "pattern", Text] with
+  given pattern: ValueAccessor[JsonRecord, Optional[Json], "pattern", Text] with
     def transform(value: Optional[Json], params: List[String]): Text =
       value.let: value =>
         (params: @unchecked) match
@@ -158,9 +154,7 @@ object JsonRecord:
       .or(abort(JsonValidationError(MissingValue)))
 
   given maybePattern: ValueAccessor[JsonRecord, Optional[Json], "pattern?", Optional[Text]] with
-    def transform
-        (value: Optional[Json], params: List[String] = Nil)
-        : Optional[Text] =
+    def transform(value: Optional[Json], params: List[String] = Nil): Optional[Text] =
       value.let: value =>
         (params: @unchecked) match
           case pattern :: Nil =>
@@ -171,13 +165,12 @@ object JsonRecord:
   given maybeInteger: ValueAccessor[JsonRecord, Optional[Json], "integer?", Optional[Int]] =
     (value, params) => value.let(_.as[Int])
 
-  given boundedInteger
-      : ValueAccessor[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError] =
+  given boundedInteger: ValueAccessor[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError] =
     new ValueAccessor[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError]:
       def transform(json: Optional[Json], params: List[String] = Nil): Int raises IntRangeError =
         val int = json.vouch(using Unsafe).as[Int]
         
-        (params.map(Text(_)): @unchecked) match
+        (params.map(_.tt): @unchecked) match
           case As[Int](min) :: As[Int](max) :: Nil =>
             if int < min || int > max then abort(IntRangeError(int, min, max)) else int
           
@@ -200,8 +193,13 @@ class JsonRecord(data: Optional[Json], access: String => Optional[Json] => Any)
 extends Record[Optional[Json]](data, access)
 
 case class JsonSchemaDoc
-    (`$schema`: Text, `$id`: Text, title: Text, `type`: Text,
-        properties: Map[String, JsonSchema.Property], required: Optional[Set[String]]):
+    (`$schema`:  Text,
+     `$id`:      Text,
+     title:      Text,
+     `type`:     Text,
+     properties: Map[String, JsonSchema.Property],
+     required:   Optional[Set[String]]):
+
   lazy val requiredFields: Set[String] = required.or(Set())
   
   def fields: Map[String, RecordField] =
@@ -209,9 +207,15 @@ case class JsonSchemaDoc
 
 object JsonSchema:
   case class Property
-      (`type`: String, properties: Optional[Map[String, Json]], items: Optional[Map[String, Json]],
-          required: Optional[Set[String]], minimum: Optional[Int], maximum: Optional[Int],
-          format: Optional[String], pattern: Optional[String]):
+      (`type`:     String,
+       properties: Optional[Map[String, Json]],
+       items:      Optional[Map[String, Json]],
+       required:   Optional[Set[String]],
+       minimum:    Optional[Int],
+       maximum:    Optional[Int],
+       format:     Optional[String],
+       pattern:    Optional[String]):
+
     def requiredFields: Set[String] = required.or(Set())
     
     def arrayFields =
@@ -225,11 +229,8 @@ object JsonSchema:
       ).or(throw Panic(msg"Some properties were missing"))
     
     def field(required: Boolean): RecordField = `type` match
-      case "array" =>
-        RecordField.Record(if required then "array" else "array?", arrayFields)
-      
-      case "object" =>
-        RecordField.Record(if required then "object" else "object?", objectFields)
+      case "array"  => RecordField.Record(if required then "array" else "array?", arrayFields)
+      case "object" => RecordField.Record(if required then "object" else "object?", objectFields)
       
       case "string" =>
         val suffix = if required then "" else "?"
