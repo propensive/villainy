@@ -25,6 +25,7 @@ project villainy
     include   rudiments/core
     include   jacinta/core
     include   nettlesome/core
+    include   anticipation/url
     include   inimitable/core
 
 ##
