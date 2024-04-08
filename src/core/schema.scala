@@ -124,7 +124,7 @@ object JsonRecord:
   //   def transform
   //       (value: Optional[Json], params: List[String])
   //       : Optional[Regex] raises RegexError =
-  //     (erased invalidRegex: Raises[RegexError]) ?=>
+  //     (erased invalidRegex: Errant[RegexError]) ?=>
   //       value.let(_.as[Text]).let: pattern =>
   //         Regex(pattern)
 
