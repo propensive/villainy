@@ -16,6 +16,7 @@ command run villainy/core
 project villainy
   name         Villainy
   website      https://github.com/propensive/villainy
+  license      apache-2
   description  Scheming typesafe Scala record types for JSON
 
   module core
