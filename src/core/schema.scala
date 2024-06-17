@@ -47,15 +47,15 @@ object JsonValidationError:
     case PatternMismatch(value: Text, pattern: Regex)
 
   object Reason:
-    given Communicable[Reason] =
+    given Reason is Communicable =
       case JsonType(expected, found) => msg"expected JSON type $expected, but found $found"
       case MissingValue              => msg"the value was missing"
-      
+
       case IntOutOfRange(value, minimum, maximum) =>
         if minimum.absent then msg"the value was greater than the maximum, ${maximum.or(0)}"
         else if maximum.absent then msg"the value was less than the minimum, ${minimum.or(0)}"
         else msg"the value was not between ${minimum.or(0)} and ${maximum.or(0)}"
-      
+
       case PatternMismatch(value, pattern) =>
         msg"the value did not conform to the regular expression ${pattern.pattern}"
 
@@ -67,7 +67,7 @@ extends Error(msg"the JSON was not valid according to the schema because $reason
 trait JsonValueAccessor[NameType <: Label, ValueType]
 extends ValueAccessor[JsonRecord, Optional[Json], NameType, ValueType]:
   def access(value: Json): ValueType
-    
+
   def transform(value: Optional[Json], params: List[String]): ValueType =
     value.let(access(_)).or(abort(JsonValidationError(MissingValue)))
 
@@ -81,46 +81,46 @@ object JsonRecord:
   given date: JsonValueAccessor["date", Text] = _.as[Text]          // Use Anticipation/Aviation
   given time: JsonValueAccessor["time", Text] = _.as[Text]          // Use Anticipation/Aviation
   given duration: JsonValueAccessor["duration", Text] = _.as[Text]  // Use Anticipation/Aviation
-  
+
   given email: JsonValueAccessor["email", EmailAddress raises EmailAddressError] with
     def access(value: Json): EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
-  
+
   given idnEmail: JsonValueAccessor["idn-email", EmailAddress raises EmailAddressError] with
     def access(value: Json): EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
-  
+
   given hostname: JsonValueAccessor["hostname", Hostname raises HostnameError] with
     def access(value: Json): Hostname raises HostnameError = Hostname.parse(value.as[Text])
-  
+
   given idnHostname: JsonValueAccessor["idn-hostname", Hostname raises HostnameError] with
     def access(value: Json): Hostname raises HostnameError = Hostname.parse(value.as[Text])
-  
+
   given ipv4: JsonValueAccessor["ipv4", Ipv4 raises IpAddressError] with
     def access(value: Json): Ipv4 raises IpAddressError = Ipv4.parse(value.as[Text])
-  
+
   given ipv6: JsonValueAccessor["ipv6", Ipv6 raises IpAddressError] with
     def access(value: Json): Ipv6 raises IpAddressError = Ipv6.parse(value.as[Text])
-  
+
   given uri[UrlType: SpecificUrl]: JsonValueAccessor["uri", UrlType] =
     value => SpecificUrl[UrlType](value.as[Text])
-  
+
   given uriReference: JsonValueAccessor["uri-reference", Text] = _.as[Text]
-  
+
   given iri[UrlType: SpecificUrl]: JsonValueAccessor["iri", UrlType] =
     value => SpecificUrl[UrlType](value.as[Text])
 
   given iriReference: JsonValueAccessor["iri-reference", Text] = _.as[Text]
-  
+
   given uuid: JsonValueAccessor["uuid", Uuid raises UuidError] with
     def access(value: Json): Uuid raises UuidError = Uuid.parse(value.as[Text])
 
   given uriTemplate: JsonValueAccessor["uri-template", Text] = _.as[Text]
   given jsonPointer: JsonValueAccessor["json-pointer", Text] = _.as[Text]
   given relativeJsonPointer: JsonValueAccessor["relative-json-pointer", Text] = _.as[Text]
-  
+
   // given maybeRegex
   //     : ValueAccessor[JsonRecord, Optional[Json], "regex?", Optional[Regex] raises RegexError]
   //     with
-    
+
   //   def transform
   //       (value: Optional[Json], params: List[String])
   //       : Optional[Regex] raises RegexError =
@@ -133,13 +133,13 @@ object JsonRecord:
 
   given array: RecordAccessor[JsonRecord, Optional[Json], "array", List] =
     _.vouch(using Unsafe).as[List[Json]].map(_)
-  
+
   given obj: RecordAccessor[JsonRecord, Optional[Json], "object", [Type] =>> Type] =
     (value, make) => make(value.vouch(using Unsafe))
-  
+
   given maybeBoolean: ValueAccessor[JsonRecord, Optional[Json], "boolean?", Optional[Boolean]] =
     (value, params) => value.let(_.as[Boolean])
-  
+
   given maybeString: ValueAccessor[JsonRecord, Optional[Json], "string?", Optional[Text]] =
     (value, params) => value.let(_.as[Text])
 
@@ -161,7 +161,7 @@ object JsonRecord:
             val regex = Regex(Text(pattern))
             if regex.matches(value.as[Text]) then value.as[Text]
             else abort(JsonValidationError(PatternMismatch(value.as[Text], regex)))
-  
+
   given maybeInteger: ValueAccessor[JsonRecord, Optional[Json], "integer?", Optional[Int]] =
     (value, params) => value.let(_.as[Int])
 
@@ -169,23 +169,23 @@ object JsonRecord:
     new ValueAccessor[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError]:
       def transform(json: Optional[Json], params: List[String] = Nil): Int raises IntRangeError =
         val int = json.vouch(using Unsafe).as[Int]
-        
+
         (params.map(_.tt): @unchecked) match
           case As[Int](min) :: As[Int](max) :: Nil =>
             if int < min || int > max then abort(IntRangeError(int, min, max)) else int
-          
+
           case As[Int](min) :: _ :: Nil =>
             if int < min then abort(IntRangeError(int, min, Unset)) else int
-          
+
           case _ :: As[Int](max) :: Nil =>
             if int > max then abort(IntRangeError(int, Unset, max)) else int
-  
+
   given maybeNumber: ValueAccessor[JsonRecord, Optional[Json], "number?", Optional[Double]] =
     (value, params) => value.let(_.as[Double])
 
   given maybeArray: RecordAccessor[JsonRecord, Optional[Json], "array?", [T] =>> Optional[List[T]]] =
     (value, make) => value.let(_.as[List[Json]].map(make))
-  
+
   given maybeObject: RecordAccessor[JsonRecord, Optional[Json], "object?", [T] =>> Optional[T]] =
     (value, make) => value.let(make(_))
 
@@ -201,7 +201,7 @@ case class JsonSchemaDoc
      required:   Optional[Set[String]]):
 
   lazy val requiredFields: Set[String] = required.or(Set())
-  
+
   def fields: Map[String, RecordField] =
     properties.map { (key, value) => key -> value.field(requiredFields.contains(key)) }
 
@@ -217,30 +217,30 @@ object JsonSchema:
        pattern:    Optional[String]):
 
     def requiredFields: Set[String] = required.or(Set())
-    
+
     def arrayFields =
       items.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
       ).or(throw Panic(msg"Some items were missing"))
-    
+
     def objectFields =
       properties.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
       ).or(throw Panic(msg"Some properties were missing"))
-    
+
     def field(required: Boolean): RecordField = `type` match
       case "array"  => RecordField.Record(if required then "array" else "array?", arrayFields)
       case "object" => RecordField.Record(if required then "object" else "object?", objectFields)
-      
+
       case "string" =>
         val suffix = if required then "" else "?"
-        
+
         pattern.let(RecordField.Value("pattern"+suffix, _)).or(RecordField.Value(format.or("string")+suffix))
-      
-      case "integer" => 
+
+      case "integer" =>
         val suffix = if minimum.absent && maximum.absent then (if required then "" else "?") else "!"
         RecordField.Value("integer"+suffix, minimum.let(_.toString).or(""), maximum.let(_.toString).or(""))
-      
+
       case other =>
         RecordField.Value(if required then other else other+"?")
 
@@ -250,5 +250,5 @@ abstract class JsonSchema(val doc: JsonSchemaDoc) extends Schema[Optional[Json],
 
   def make(data: Optional[Json], access: String => Optional[Json] => Any): JsonRecord =
     JsonRecord(data, access)
-  
+
   def fields: Map[String, RecordField] = unsafely(doc.fields)

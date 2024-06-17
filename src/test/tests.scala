@@ -73,7 +73,7 @@ object Tests extends Suite(t"Villainy tests"):
       // `throwUnsafely` has higher precedence.
       try
         val result = record.children.head.color
-        throw UnexpectedSuccessError(result)
+        throw ExpectationError(result)
       catch case error: JsonValidationError => error
     .assert(_ == JsonValidationError(JsonValidationError.Reason.PatternMismatch(t"green", r"#[0-9a-f]{6}")))
     
