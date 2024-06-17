@@ -39,7 +39,7 @@ object IntRangeError:
 case class IntRangeError(value: Int, minimum: Optional[Int], maximum: Optional[Int])
 extends Error(msg"the integer $value is not in the range ${IntRangeError.range(minimum, maximum)}")
 
-object JsonValidationError:
+object JsonSchemaError:
   enum Reason:
     case JsonType(expected: JsonPrimitive, found: JsonPrimitive)
     case MissingValue
@@ -59,66 +59,66 @@ object JsonValidationError:
       case PatternMismatch(value, pattern) =>
         msg"the value did not conform to the regular expression ${pattern.pattern}"
 
-import JsonValidationError.Reason, Reason.*
+import JsonSchemaError.Reason, Reason.*
 
-case class JsonValidationError(reason: Reason)
+case class JsonSchemaError(reason: Reason)
 extends Error(msg"the JSON was not valid according to the schema because $reason")
 
-trait JsonValueAccessor[NameType <: Label, ValueType]
-extends ValueAccessor[JsonRecord, Optional[Json], NameType, ValueType]:
+trait JsonSchematic[NameType <: Label, ValueType]
+extends Schematic[JsonRecord, Optional[Json], NameType, ValueType]:
   def access(value: Json): ValueType
 
   def transform(value: Optional[Json], params: List[String]): ValueType =
-    value.let(access(_)).or(abort(JsonValidationError(MissingValue)))
+    value.let(access(_)).or(abort(JsonSchemaError(MissingValue)))
 
 object JsonRecord:
 
-  given boolean: JsonValueAccessor["boolean", Boolean] = _.as[Boolean]
-  given string: JsonValueAccessor["string", Text] = _.as[Text]
-  given integer: JsonValueAccessor["integer", Int] = _.as[Int]
-  given number: JsonValueAccessor["number", Double] = _.as[Double]
-  given dateTime: JsonValueAccessor["date-time", Text] = _.as[Text] // Use Anticipation/Aviation
-  given date: JsonValueAccessor["date", Text] = _.as[Text]          // Use Anticipation/Aviation
-  given time: JsonValueAccessor["time", Text] = _.as[Text]          // Use Anticipation/Aviation
-  given duration: JsonValueAccessor["duration", Text] = _.as[Text]  // Use Anticipation/Aviation
+  given boolean: JsonSchematic["boolean", Boolean] = _.as[Boolean]
+  given string: JsonSchematic["string", Text] = _.as[Text]
+  given integer: JsonSchematic["integer", Int] = _.as[Int]
+  given number: JsonSchematic["number", Double] = _.as[Double]
+  given dateTime: JsonSchematic["date-time", Text] = _.as[Text] // Use Anticipation/Aviation
+  given date: JsonSchematic["date", Text] = _.as[Text]          // Use Anticipation/Aviation
+  given time: JsonSchematic["time", Text] = _.as[Text]          // Use Anticipation/Aviation
+  given duration: JsonSchematic["duration", Text] = _.as[Text]  // Use Anticipation/Aviation
 
-  given email: JsonValueAccessor["email", EmailAddress raises EmailAddressError] with
+  given email: JsonSchematic["email", EmailAddress raises EmailAddressError] with
     def access(value: Json): EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
 
-  given idnEmail: JsonValueAccessor["idn-email", EmailAddress raises EmailAddressError] with
+  given idnEmail: JsonSchematic["idn-email", EmailAddress raises EmailAddressError] with
     def access(value: Json): EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
 
-  given hostname: JsonValueAccessor["hostname", Hostname raises HostnameError] with
+  given hostname: JsonSchematic["hostname", Hostname raises HostnameError] with
     def access(value: Json): Hostname raises HostnameError = Hostname.parse(value.as[Text])
 
-  given idnHostname: JsonValueAccessor["idn-hostname", Hostname raises HostnameError] with
+  given idnHostname: JsonSchematic["idn-hostname", Hostname raises HostnameError] with
     def access(value: Json): Hostname raises HostnameError = Hostname.parse(value.as[Text])
 
-  given ipv4: JsonValueAccessor["ipv4", Ipv4 raises IpAddressError] with
+  given ipv4: JsonSchematic["ipv4", Ipv4 raises IpAddressError] with
     def access(value: Json): Ipv4 raises IpAddressError = Ipv4.parse(value.as[Text])
 
-  given ipv6: JsonValueAccessor["ipv6", Ipv6 raises IpAddressError] with
+  given ipv6: JsonSchematic["ipv6", Ipv6 raises IpAddressError] with
     def access(value: Json): Ipv6 raises IpAddressError = Ipv6.parse(value.as[Text])
 
-  given uri[UrlType: SpecificUrl]: JsonValueAccessor["uri", UrlType] =
+  given uri[UrlType: SpecificUrl]: JsonSchematic["uri", UrlType] =
     value => SpecificUrl[UrlType](value.as[Text])
 
-  given uriReference: JsonValueAccessor["uri-reference", Text] = _.as[Text]
+  given uriReference: JsonSchematic["uri-reference", Text] = _.as[Text]
 
-  given iri[UrlType: SpecificUrl]: JsonValueAccessor["iri", UrlType] =
+  given iri[UrlType: SpecificUrl]: JsonSchematic["iri", UrlType] =
     value => SpecificUrl[UrlType](value.as[Text])
 
-  given iriReference: JsonValueAccessor["iri-reference", Text] = _.as[Text]
+  given iriReference: JsonSchematic["iri-reference", Text] = _.as[Text]
 
-  given uuid: JsonValueAccessor["uuid", Uuid raises UuidError] with
+  given uuid: JsonSchematic["uuid", Uuid raises UuidError] with
     def access(value: Json): Uuid raises UuidError = Uuid.parse(value.as[Text])
 
-  given uriTemplate: JsonValueAccessor["uri-template", Text] = _.as[Text]
-  given jsonPointer: JsonValueAccessor["json-pointer", Text] = _.as[Text]
-  given relativeJsonPointer: JsonValueAccessor["relative-json-pointer", Text] = _.as[Text]
+  given uriTemplate: JsonSchematic["uri-template", Text] = _.as[Text]
+  given jsonPointer: JsonSchematic["json-pointer", Text] = _.as[Text]
+  given relativeJsonPointer: JsonSchematic["relative-json-pointer", Text] = _.as[Text]
 
   // given maybeRegex
-  //     : ValueAccessor[JsonRecord, Optional[Json], "regex?", Optional[Regex] raises RegexError]
+  //     : Schematic[JsonRecord, Optional[Json], "regex?", Optional[Regex] raises RegexError]
   //     with
 
   //   def transform
@@ -128,7 +128,7 @@ object JsonRecord:
   //       value.let(_.as[Text]).let: pattern =>
   //         Regex(pattern)
 
-  given regex: JsonValueAccessor["regex", Regex raises RegexError] with
+  given regex: JsonSchematic["regex", Regex raises RegexError] with
     def access(value: Json): Regex raises RegexError = Regex(value.as[Text])
 
   given array: RecordAccessor[JsonRecord, Optional[Json], "array", List] =
@@ -137,36 +137,36 @@ object JsonRecord:
   given obj: RecordAccessor[JsonRecord, Optional[Json], "object", [Type] =>> Type] =
     (value, make) => make(value.vouch(using Unsafe))
 
-  given maybeBoolean: ValueAccessor[JsonRecord, Optional[Json], "boolean?", Optional[Boolean]] =
+  given maybeBoolean: Schematic[JsonRecord, Optional[Json], "boolean?", Optional[Boolean]] =
     (value, params) => value.let(_.as[Boolean])
 
-  given maybeString: ValueAccessor[JsonRecord, Optional[Json], "string?", Optional[Text]] =
+  given maybeString: Schematic[JsonRecord, Optional[Json], "string?", Optional[Text]] =
     (value, params) => value.let(_.as[Text])
 
-  given pattern: ValueAccessor[JsonRecord, Optional[Json], "pattern", Text] with
+  given pattern: Schematic[JsonRecord, Optional[Json], "pattern", Text] with
     def transform(value: Optional[Json], params: List[String]): Text =
       value.let: value =>
         (params: @unchecked) match
           case List(pattern: String) =>
             val regex = Regex(Text(pattern))
             if regex.matches(value.as[Text]) then value.as[Text]
-            else abort(JsonValidationError(PatternMismatch(value.as[Text], regex)))
-      .or(abort(JsonValidationError(MissingValue)))
+            else abort(JsonSchemaError(PatternMismatch(value.as[Text], regex)))
+      .or(abort(JsonSchemaError(MissingValue)))
 
-  given maybePattern: ValueAccessor[JsonRecord, Optional[Json], "pattern?", Optional[Text]] with
+  given maybePattern: Schematic[JsonRecord, Optional[Json], "pattern?", Optional[Text]] with
     def transform(value: Optional[Json], params: List[String] = Nil): Optional[Text] =
       value.let: value =>
         (params: @unchecked) match
           case pattern :: Nil =>
             val regex = Regex(Text(pattern))
             if regex.matches(value.as[Text]) then value.as[Text]
-            else abort(JsonValidationError(PatternMismatch(value.as[Text], regex)))
+            else abort(JsonSchemaError(PatternMismatch(value.as[Text], regex)))
 
-  given maybeInteger: ValueAccessor[JsonRecord, Optional[Json], "integer?", Optional[Int]] =
+  given maybeInteger: Schematic[JsonRecord, Optional[Json], "integer?", Optional[Int]] =
     (value, params) => value.let(_.as[Int])
 
-  given boundedInteger: ValueAccessor[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError] =
-    new ValueAccessor[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError]:
+  given boundedInteger: Schematic[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError] =
+    new Schematic[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError]:
       def transform(json: Optional[Json], params: List[String] = Nil): Int raises IntRangeError =
         val int = json.vouch(using Unsafe).as[Int]
 
@@ -180,7 +180,7 @@ object JsonRecord:
           case _ :: As[Int](max) :: Nil =>
             if int > max then abort(IntRangeError(int, Unset, max)) else int
 
-  given maybeNumber: ValueAccessor[JsonRecord, Optional[Json], "number?", Optional[Double]] =
+  given maybeNumber: Schematic[JsonRecord, Optional[Json], "number?", Optional[Double]] =
     (value, params) => value.let(_.as[Double])
 
   given maybeArray: RecordAccessor[JsonRecord, Optional[Json], "array?", [T] =>> Optional[List[T]]] =
@@ -189,8 +189,10 @@ object JsonRecord:
   given maybeObject: RecordAccessor[JsonRecord, Optional[Json], "object?", [T] =>> Optional[T]] =
     (value, make) => value.let(make(_))
 
-class JsonRecord(data: Optional[Json], access: String => Optional[Json] => Any)
-extends Record[Optional[Json]](data, access)
+class JsonRecord(data0: Optional[Json], access0: String => Optional[Json] => Any) extends Record:
+  type Codec = Optional[Json]
+  val data: Optional[Json] = data0
+  def access: String => Optional[Json] => Any = access0
 
 case class JsonSchemaDoc
     (`$schema`:  Text,

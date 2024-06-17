@@ -59,36 +59,36 @@ object Tests extends Suite(t"Villainy tests"):
     test(t"Get an array value"):
       record.children
     .assert()
-    
+
     test(t"Get the head of an array"):
       record.children.head
     .assert()
-    
+
     test(t"Get a nested value"):
       record.children.head.weight
     .assert(_ == 0.8)
-    
+
     test(t"A bad pattern-checked value throws an exceptions"):
       // FIXME: This should use `capture` to grab the error, but it doesn't seem to work, perhaps because
       // `throwUnsafely` has higher precedence.
       try
         val result = record.children.head.color
         throw ExpectationError(result)
-      catch case error: JsonValidationError => error
-    .assert(_ == JsonValidationError(JsonValidationError.Reason.PatternMismatch(t"green", r"#[0-9a-f]{6}")))
-    
+      catch case error: JsonSchemaError => error
+    .assert(_ == JsonSchemaError(JsonSchemaError.Reason.PatternMismatch(t"green", r"#[0-9a-f]{6}")))
+
     test(t"A bad pattern-checked value throws an exceptions"):
       record.children(1).color
     .assert(_ == t"#ff0000")
-    
+
     test(t"Get a nested item value"):
       record.sub.date
     .assert(_ == t"11/12/20")
-    
+
     test(t"Get a regex value"):
       record.pattern
     .assert(_ == Regex(t"a.b"))
-    
+
     test(t"Get some values in a list"):
       capture:
         record.children.map { elem => elem.height }.to(List)
