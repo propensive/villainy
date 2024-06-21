@@ -190,7 +190,7 @@ object JsonRecord:
     (value, make) => value.let(make(_))
 
 class JsonRecord(data0: Optional[Json], access0: String => Optional[Json] => Any) extends Record:
-  type Codec = Optional[Json]
+  type Format = Optional[Json]
   val data: Optional[Json] = data0
   def access: String => Optional[Json] => Any = access0
 
