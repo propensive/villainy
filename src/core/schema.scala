@@ -37,7 +37,7 @@ object IntRangeError:
     Text(s"${minimum.let { n => s"$n ≤ " }.or("")}x${minimum.let { n => s" ≤ $n" }.or("")}")
 
 case class IntRangeError(value: Int, minimum: Optional[Int], maximum: Optional[Int])
-extends Error(msg"the integer $value is not in the range ${IntRangeError.range(minimum, maximum)}")
+extends Error(m"the integer $value is not in the range ${IntRangeError.range(minimum, maximum)}")
 
 object JsonSchemaError:
   enum Reason:
@@ -48,21 +48,21 @@ object JsonSchemaError:
 
   object Reason:
     given Reason is Communicable =
-      case JsonType(expected, found) => msg"expected JSON type $expected, but found $found"
-      case MissingValue              => msg"the value was missing"
+      case JsonType(expected, found) => m"expected JSON type $expected, but found $found"
+      case MissingValue              => m"the value was missing"
 
       case IntOutOfRange(value, minimum, maximum) =>
-        if minimum.absent then msg"the value was greater than the maximum, ${maximum.or(0)}"
-        else if maximum.absent then msg"the value was less than the minimum, ${minimum.or(0)}"
-        else msg"the value was not between ${minimum.or(0)} and ${maximum.or(0)}"
+        if minimum.absent then m"the value was greater than the maximum, ${maximum.or(0)}"
+        else if maximum.absent then m"the value was less than the minimum, ${minimum.or(0)}"
+        else m"the value was not between ${minimum.or(0)} and ${maximum.or(0)}"
 
       case PatternMismatch(value, pattern) =>
-        msg"the value did not conform to the regular expression ${pattern.pattern}"
+        m"the value did not conform to the regular expression ${pattern.pattern}"
 
 import JsonSchemaError.Reason, Reason.*
 
 case class JsonSchemaError(reason: Reason)
-extends Error(msg"the JSON was not valid according to the schema because $reason")
+extends Error(m"the JSON was not valid according to the schema because $reason")
 
 trait JsonSchematic[NameType <: Label, ValueType]
 extends Schematic[JsonRecord, Optional[Json], NameType, ValueType]:
@@ -223,12 +223,12 @@ object JsonSchema:
     def arrayFields =
       items.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
-      ).or(throw Panic(msg"Some items were missing"))
+      ).or(throw Panic(m"Some items were missing"))
 
     def objectFields =
       properties.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key))
-      ).or(throw Panic(msg"Some properties were missing"))
+      ).or(throw Panic(m"Some properties were missing"))
 
     def field(required: Boolean): RecordField = `type` match
       case "array"  => RecordField.Record(if required then "array" else "array?", arrayFields)
