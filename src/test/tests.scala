@@ -29,7 +29,7 @@ import vacuous.*
 import kaleidoscope.*
 
 import unsafeExceptions.canThrowAny
-import errorHandlers.throwUnsafely
+import strategies.throwUnsafely
 
 object Tests extends Suite(t"Villainy tests"):
   def run(): Unit =

@@ -30,7 +30,7 @@ import merino.*
 
 import scala.compiletime.*
 
-import errorHandlers.throwUnsafely
+import strategies.throwUnsafely
 
 object IntRangeError:
   def range(minimum: Optional[Int], maximum: Optional[Int]): Text =
@@ -124,7 +124,7 @@ object JsonRecord:
   //   def transform
   //       (value: Optional[Json], params: List[String])
   //       : Optional[Regex] raises RegexError =
-  //     (erased invalidRegex: Errant[RegexError]) ?=>
+  //     (erased invalidRegex: Tactic[RegexError]) ?=>
   //       value.let(_.as[Text]).let: pattern =>
   //         Regex(pattern)
 

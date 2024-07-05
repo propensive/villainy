@@ -24,7 +24,7 @@ import contingency.*
 import merino.*
 import hieroglyph.*, charEncoders.utf8
 
-import errorHandlers.throwUnsafely
+import strategies.throwUnsafely
 
 object ExampleSchema extends JsonSchema(Json.parse(t"""{
   "$$id": "abc",
@@ -56,6 +56,5 @@ object ExampleSchema extends JsonSchema(Json.parse(t"""{
   }
 }""").as[JsonSchemaDoc]):
   import RecordField.*
-  
-  transparent inline def record(json: Json): JsonRecord = ${build('json)}
 
+  transparent inline def record(json: Json): JsonRecord = ${build('json)}
