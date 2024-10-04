@@ -37,6 +37,7 @@ object IntRangeError:
     Text(s"${minimum.let { n => s"$n ≤ " }.or("")}x${minimum.let { n => s" ≤ $n" }.or("")}")
 
 case class IntRangeError(value: Int, minimum: Optional[Int], maximum: Optional[Int])
+    (using Diagnostics)
 extends Error(m"the integer $value is not in the range ${IntRangeError.range(minimum, maximum)}")
 
 object JsonSchemaError:
@@ -61,7 +62,7 @@ object JsonSchemaError:
 
 import JsonSchemaError.Reason, Reason.*
 
-case class JsonSchemaError(reason: Reason)
+case class JsonSchemaError(reason: Reason)(using Diagnostics)
 extends Error(m"the JSON was not valid according to the schema because $reason")
 
 trait JsonSchematic[NameType <: Label, ValueType]
