@@ -37,7 +37,7 @@ object IntRangeError:
     Text(s"${minimum.let { n => s"$n ≤ " }.or("")}x${minimum.let { n => s" ≤ $n" }.or("")}")
 
 case class IntRangeError(value: Int, minimum: Optional[Int], maximum: Optional[Int])
-    (using Diagnostics)
+   (using Diagnostics)
 extends Error(m"the integer $value is not in the range ${IntRangeError.range(minimum, maximum)}")
 
 object JsonSchemaError:
@@ -196,12 +196,12 @@ class JsonRecord(data0: Optional[Json], access0: String => Optional[Json] => Any
   def access: String => Optional[Json] => Any = access0
 
 case class JsonSchemaDoc
-    (`$schema`:  Text,
-     `$id`:      Text,
-     title:      Text,
-     `type`:     Text,
-     properties: Map[String, JsonSchema.Property],
-     required:   Optional[Set[String]]):
+   (`$schema`:  Text,
+    `$id`:      Text,
+    title:      Text,
+    `type`:     Text,
+    properties: Map[String, JsonSchema.Property],
+    required:   Optional[Set[String]]):
 
   lazy val requiredFields: Set[String] = required.or(Set())
 
@@ -210,14 +210,14 @@ case class JsonSchemaDoc
 
 object JsonSchema:
   case class Property
-      (`type`:     String,
-       properties: Optional[Map[String, Json]],
-       items:      Optional[Map[String, Json]],
-       required:   Optional[Set[String]],
-       minimum:    Optional[Int],
-       maximum:    Optional[Int],
-       format:     Optional[String],
-       pattern:    Optional[String]):
+     (`type`:     String,
+      properties: Optional[Map[String, Json]],
+      items:      Optional[Map[String, Json]],
+      required:   Optional[Set[String]],
+      minimum:    Optional[Int],
+      maximum:    Optional[Int],
+      format:     Optional[String],
+      pattern:    Optional[String]):
 
     def requiredFields: Set[String] = required.or(Set())
 
