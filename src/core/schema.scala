@@ -70,7 +70,7 @@ extends Schematic[JsonRecord, Optional[Json], NameType, ValueType]:
   def access(value: Json): ValueType
 
   def transform(value: Optional[Json], params: List[String]): ValueType =
-    value.let(access(_)).or(abort(JsonSchemaError(MissingValue)))
+    value.let(access(_)).lest(JsonSchemaError(MissingValue))
 
 object JsonRecord:
 
@@ -152,7 +152,7 @@ object JsonRecord:
             val regex = Regex(Text(pattern))
             if regex.matches(value.as[Text]) then value.as[Text]
             else abort(JsonSchemaError(PatternMismatch(value.as[Text], regex)))
-      .or(abort(JsonSchemaError(MissingValue)))
+      .lest(JsonSchemaError(MissingValue))
 
   given maybePattern: Schematic[JsonRecord, Optional[Json], "pattern?", Optional[Text]] with
     def transform(value: Optional[Json], params: List[String] = Nil): Optional[Text] =
