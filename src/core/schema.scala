@@ -152,7 +152,8 @@ object JsonRecord:
             val regex = Regex(Text(pattern))
             if regex.matches(value.as[Text]) then value.as[Text]
             else abort(JsonSchemaError(PatternMismatch(value.as[Text], regex)))
-      .lest(JsonSchemaError(MissingValue))
+
+      . lest(JsonSchemaError(MissingValue))
 
   given maybePattern: Schematic[JsonRecord, Optional[Json], "pattern?", Optional[Text]] with
     def transform(value: Optional[Json], params: List[String] = Nil): Optional[Text] =
@@ -224,14 +225,16 @@ object JsonSchema:
     def arrayFields =
       items.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key)))
-       .or:
-        panic(m"Some items were missing")
+
+      . or:
+          panic(m"Some items were missing")
 
     def objectFields =
       properties.let(_.map: (key, value) =>
         key -> value.as[Property].field(requiredFields.contains(key)))
-       .or:
-        panic(m"Some properties were missing")
+
+      . or:
+          panic(m"Some properties were missing")
 
     def field(required: Boolean): RecordField = `type` match
       case "array"  => RecordField.Record(if required then "array" else "array?", arrayFields)
