@@ -16,17 +16,17 @@
 
 package villainy
 
-import probably.*
-import polyvinyl.*
-import gossamer.*
-import rudiments.*
-import jacinta.*
-import turbulence.*
-import hieroglyph.*, charEncoders.utf8
-import spectacular.*
 import contingency.*
-import vacuous.*
+import gossamer.*
+import hieroglyph.*, charEncoders.utf8
+import jacinta.*
 import kaleidoscope.*
+import polyvinyl.*
+import probably.*
+import rudiments.*
+import spectacular.*
+import turbulence.*
+import vacuous.*
 
 import unsafeExceptions.canThrowAny
 import strategies.throwUnsafely

@@ -16,13 +16,13 @@
 
 package villainy
 
-import jacinta.*
-import turbulence.*
-import gossamer.*
-import polyvinyl.*
 import contingency.*
-import merino.*
+import gossamer.*
 import hieroglyph.*, charEncoders.utf8
+import jacinta.*
+import merino.*
+import polyvinyl.*
+import turbulence.*
 
 import strategies.throwUnsafely
 

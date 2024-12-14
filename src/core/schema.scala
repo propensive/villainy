@@ -16,17 +16,17 @@
 
 package villainy
 
-import polyvinyl.*
-import vacuous.*
-import rudiments.*
-import inimitable.*
+import anticipation.*
 import contingency.*
 import fulminate.*
+import inimitable.*
 import jacinta.*
 import kaleidoscope.*
-import anticipation.*
-import nettlesome.*
 import merino.*
+import nettlesome.*
+import polyvinyl.*
+import rudiments.*
+import vacuous.*
 
 import scala.compiletime.*
 
