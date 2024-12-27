@@ -24,6 +24,7 @@ integration is provided by [Jacinta](https://github.com/propensive/jacinta)
 
 
 
+
 ## Getting Started
 
 A JSON Schema is a JSON document which defines invariants of the structure of other documents, most notably
@@ -129,7 +130,7 @@ as long as caution is taken to avoid a mismatch between the project's stability
 level and the required stability and maintainability of your own project.
 
 Villainy is designed to be _small_. Its entire source code currently consists
-of 276 lines of code.
+of 278 lines of code.
 
 ## Building
 
