@@ -25,6 +25,7 @@ integration is provided by [Jacinta](https://github.com/propensive/jacinta)
 
 
 
+
 ## Getting Started
 
 A JSON Schema is a JSON document which defines invariants of the structure of other documents, most notably
@@ -216,6 +217,6 @@ The logo shows a pair of glowing, villainous eyes.
 
 ## License
 
-Villainy is copyright &copy; 2024 Jon Pretty & Propensive O&Uuml;, and
+Villainy is copyright &copy; 2025 Jon Pretty & Propensive O&Uuml;, and
 is made available under the [Apache 2.0 License](/license.md).
 
