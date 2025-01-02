@@ -26,6 +26,7 @@ integration is provided by [Jacinta](https://github.com/propensive/jacinta)
 
 
 
+
 ## Getting Started
 
 A JSON Schema is a JSON document which defines invariants of the structure of other documents, most notably
