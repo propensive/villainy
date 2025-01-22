@@ -32,48 +32,7 @@ import scala.compiletime.*
 
 import strategies.throwUnsafely
 
-object IntRangeError:
-  def range(minimum: Optional[Int], maximum: Optional[Int]): Text =
-    Text(s"${minimum.let { n => s"$n ≤ " }.or("")}x${minimum.let { n => s" ≤ $n" }.or("")}")
-
-case class IntRangeError(value: Int, minimum: Optional[Int], maximum: Optional[Int])
-   (using Diagnostics)
-extends Error(m"the integer $value is not in the range ${IntRangeError.range(minimum, maximum)}")
-
-object JsonSchemaError:
-  enum Reason:
-    case JsonType(expected: JsonPrimitive, found: JsonPrimitive)
-    case MissingValue
-    case IntOutOfRange(value: Int, minimum: Optional[Int], maximum: Optional[Int])
-    case PatternMismatch(value: Text, pattern: Regex)
-
-  object Reason:
-    given Reason is Communicable =
-      case JsonType(expected, found) => m"expected JSON type $expected, but found $found"
-      case MissingValue              => m"the value was missing"
-
-      case IntOutOfRange(value, minimum, maximum) =>
-        if minimum.absent then m"the value was greater than the maximum, ${maximum.or(0)}"
-        else if maximum.absent then m"the value was less than the minimum, ${minimum.or(0)}"
-        else m"the value was not between ${minimum.or(0)} and ${maximum.or(0)}"
-
-      case PatternMismatch(value, pattern) =>
-        m"the value did not conform to the regular expression ${pattern.pattern}"
-
-import JsonSchemaError.Reason, Reason.*
-
-case class JsonSchemaError(reason: Reason)(using Diagnostics)
-extends Error(m"the JSON was not valid according to the schema because $reason")
-
-trait JsonSchematic[NameType <: Label, ValueType]
-extends Schematic[JsonRecord, Optional[Json], NameType, ValueType]:
-  def access(value: Json): ValueType
-
-  def transform(value: Optional[Json], params: List[String]): ValueType =
-    value.let(access(_)).lest(JsonSchemaError(MissingValue))
-
 object JsonRecord:
-
   given boolean: JsonSchematic["boolean", Boolean] = _.as[Boolean]
   given string: JsonSchematic["string", Text] = _.as[Text]
   given integer: JsonSchematic["integer", Int] = _.as[Int]
@@ -84,10 +43,12 @@ object JsonRecord:
   given duration: JsonSchematic["duration", Text] = _.as[Text]  // Use Anticipation/Aviation
 
   given email: JsonSchematic["email", EmailAddress raises EmailAddressError] with
-    def access(value: Json): EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
+    def access(value: Json)
+            : EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
 
   given idnEmail: JsonSchematic["idn-email", EmailAddress raises EmailAddressError] with
-    def access(value: Json): EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
+    def access(value: Json)
+            : EmailAddress raises EmailAddressError = EmailAddress.parse(value.as[Text])
 
   given hostname: JsonSchematic["hostname", Hostname raises HostnameError] with
     def access(value: Json): Hostname raises HostnameError = Hostname.parse(value.as[Text])
@@ -167,7 +128,8 @@ object JsonRecord:
   given maybeInteger: Schematic[JsonRecord, Optional[Json], "integer?", Optional[Int]] =
     (value, params) => value.let(_.as[Int])
 
-  given boundedInteger: Schematic[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError] =
+  given boundedInteger
+          : Schematic[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError] =
     new Schematic[JsonRecord, Optional[Json], "integer!", Int raises IntRangeError]:
       def transform(json: Optional[Json], params: List[String] = Nil): Int raises IntRangeError =
         val int = json.vouch(using Unsafe).as[Int]
@@ -185,7 +147,8 @@ object JsonRecord:
   given maybeNumber: Schematic[JsonRecord, Optional[Json], "number?", Optional[Double]] =
     (value, params) => value.let(_.as[Double])
 
-  given maybeArray: RecordAccessor[JsonRecord, Optional[Json], "array?", [T] =>> Optional[List[T]]] =
+  given maybeArray
+          : RecordAccessor[JsonRecord, Optional[Json], "array?", [T] =>> Optional[List[T]]] =
     (value, make) => value.let(_.as[List[Json]].map(make))
 
   given maybeObject: RecordAccessor[JsonRecord, Optional[Json], "object?", [T] =>> Optional[T]] =
@@ -195,68 +158,3 @@ class JsonRecord(data0: Optional[Json], access0: String => Optional[Json] => Any
   type Format = Optional[Json]
   val data: Optional[Json] = data0
   def access: String => Optional[Json] => Any = access0
-
-case class JsonSchemaDoc
-   (`$schema`:  Text,
-    `$id`:      Text,
-    title:      Text,
-    `type`:     Text,
-    properties: Map[String, JsonSchema.Property],
-    required:   Optional[Set[String]]):
-
-  lazy val requiredFields: Set[String] = required.or(Set())
-
-  def fields: Map[String, RecordField] =
-    properties.map { (key, value) => key -> value.field(requiredFields.contains(key)) }
-
-object JsonSchema:
-  case class Property
-     (`type`:     String,
-      properties: Optional[Map[String, Json]],
-      items:      Optional[Map[String, Json]],
-      required:   Optional[Set[String]],
-      minimum:    Optional[Int],
-      maximum:    Optional[Int],
-      format:     Optional[String],
-      pattern:    Optional[String]):
-
-    def requiredFields: Set[String] = required.or(Set())
-
-    def arrayFields =
-      items.let(_.map: (key, value) =>
-        key -> value.as[Property].field(requiredFields.contains(key)))
-
-      . or:
-          panic(m"Some items were missing")
-
-    def objectFields =
-      properties.let(_.map: (key, value) =>
-        key -> value.as[Property].field(requiredFields.contains(key)))
-
-      . or:
-          panic(m"Some properties were missing")
-
-    def field(required: Boolean): RecordField = `type` match
-      case "array"  => RecordField.Record(if required then "array" else "array?", arrayFields)
-      case "object" => RecordField.Record(if required then "object" else "object?", objectFields)
-
-      case "string" =>
-        val suffix = if required then "" else "?"
-
-        pattern.let(RecordField.Value("pattern"+suffix, _)).or(RecordField.Value(format.or("string")+suffix))
-
-      case "integer" =>
-        val suffix = if minimum.absent && maximum.absent then (if required then "" else "?") else "!"
-        RecordField.Value("integer"+suffix, minimum.let(_.toString).or(""), maximum.let(_.toString).or(""))
-
-      case other =>
-        RecordField.Value(if required then other else other+"?")
-
-abstract class JsonSchema(val doc: JsonSchemaDoc) extends Schema[Optional[Json], JsonRecord]:
-  def access(name: String, json: Optional[Json]): Optional[Json] = json.let: json =>
-    json.as[Map[String, Json]].get(name).getOrElse(Unset)
-
-  def make(data: Optional[Json], access: String => Optional[Json] => Any): JsonRecord =
-    JsonRecord(data, access)
-
-  def fields: Map[String, RecordField] = unsafely(doc.fields)
